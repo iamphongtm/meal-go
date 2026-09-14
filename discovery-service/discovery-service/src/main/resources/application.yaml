@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: discovery-service
+
+server:
+  port: 8761
+
+eureka:
+  client:
+    # Không tự đăng ký chính nó vào danh bạ
+    register-with-eureka: false
+    # Không cần lấy danh sách service từ nơi khác về
+    fetch-registry: false
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
