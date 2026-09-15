@@ -1,4 +1,11 @@
 spring:
   application:
     name: identify-service
+  mvc:
+    problemdetails:
+      enabled: true
+
+apikit:
+  problem:
+    type-base-uri: https://apikit.io/problems
 
