@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "apikit.problem.type-base-uri",
+      "type": "java.lang.String",
+      "description": "Base URI for RFC 9457 problem type URLs.",
+      "defaultValue": "https://apikit.io/problems"
+    }
+  ]
+}

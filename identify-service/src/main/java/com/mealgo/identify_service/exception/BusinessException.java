@@ -1,7 +1,5 @@
 package com.mealgo.identify_service.exception;
 
-import io.apikit.apicommon.exception.ApiException;
-
 /**
  * Base for identify-service business errors.
  * Pass only {@link IdentifyErrorCode} (+ optional message args).

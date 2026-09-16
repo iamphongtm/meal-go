@@ -1,6 +1,5 @@
 package com.mealgo.identify_service.exception;
 
-import io.apikit.apicommon.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 /**

@@ -1,11 +1,11 @@
 spring:
   application:
-    name: identify-service
+    name: restaurant-service
   mvc:
     problemdetails:
       enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/mealgo_identity
+    url: jdbc:postgresql://localhost:5432/mealgo_restaurant
     username: postgres
     password: PhongTM@2002
     driver-class-name: org.postgresql.Driver
@@ -22,9 +22,9 @@ spring:
       hibernate:
         format_sql: false
 
-mealgo:
+apikit:
   problem:
-    type-base-uri: https://mealgo.com/problems
+    type-base-uri: https://apikit.io/problems
 
 server:
   port: 8081

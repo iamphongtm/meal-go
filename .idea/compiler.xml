@@ -2,11 +2,11 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="api-commons" />
         <module name="discovery-service" />
       </profile>
       <profile name="Annotation profile for identify-service" enabled="true">
@@ -17,9 +17,11 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="identify-service" />
+        <module name="restaurant-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="api-commons" target="21" />
       <module name="meal-go" target="1.5" />
     </bytecodeTargetLevel>
   </component>
@@ -28,6 +30,7 @@
       <module name="api-commons" options="-parameters" />
       <module name="discovery-service" options="-parameters" />
       <module name="identify-service" options="-parameters" />
+      <module name="restaurant-service" options="-parameters" />
     </option>
   </component>
 </project>
