@@ -9,6 +9,10 @@ spring:
     username: postgres
     password: PhongTM@2002
     driver-class-name: org.postgresql.Driver
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
 
   jpa:
     open-in-view: false
@@ -21,10 +25,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-
-mealgo:
-  problem:
-    type-base-uri: https://mealgo.com/problems
 
 server:
   port: 8081

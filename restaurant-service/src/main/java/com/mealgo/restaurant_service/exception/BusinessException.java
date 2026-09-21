@@ -1,4 +1,4 @@
-package com.mealgo.identify_service.exception;
+package com.mealgo.restaurant_service.exception;
 
 import lombok.Getter;
 

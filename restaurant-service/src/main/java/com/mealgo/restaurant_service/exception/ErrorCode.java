@@ -1,13 +1,15 @@
-package com.mealgo.identify_service.exception;
+package com.mealgo.restaurant_service.exception;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "user.not-found"),
-    EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "email.already-exists");
-
+    //Error Ward
+    WARD_NOT_FOUND(HttpStatus.NOT_FOUND, "ward.not-found"),
+    //Error Province
+    PROVINCE_NOT_FOUND(HttpStatus.NOT_FOUND, "province.not-found"),
+    ;
     private final HttpStatus status;
     private final String typeSuffix;
 
