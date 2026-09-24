@@ -50,6 +50,7 @@ public class GlobalExceptionHandler {
             error.put("message", fieldError.getDefaultMessage());
             invalidParams.add(error);
         }
+
         problemDetail.setProperty("invalid_params", invalidParams);
 
         return ResponseEntity.badRequest().body(problemDetail);

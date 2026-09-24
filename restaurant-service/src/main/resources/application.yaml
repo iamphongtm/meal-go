@@ -26,5 +26,22 @@ spring:
       hibernate:
         format_sql: false
 
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    disable-swagger-default-url: true
+  packages-to-scan: com.mealgo.restaurant_service.controller
+
+app:
+  api:
+    version: ${API_VERSION:1.0.0}
+
 server:
   port: 8081

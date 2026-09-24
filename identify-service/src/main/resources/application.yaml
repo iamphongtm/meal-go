@@ -5,9 +5,9 @@ spring:
     problemdetails:
       enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/mealgo_identity
-    username: postgres
-    password: PhongTM@2002
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/mealgo_identity}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:PhongTM@2002}
     driver-class-name: org.postgresql.Driver
   messages:
     basename: i18n/messages
@@ -18,7 +18,7 @@ spring:
     open-in-view: false
 
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
     show-sql: false
 
@@ -27,4 +27,13 @@ spring:
         format_sql: false
 
 server:
-  port: 8081
+  port: ${SERVER_PORT:8082}
+
+app:
+  jwt:
+    issuer: ${JWT_ISSUER:http://localhost:${server.port}}
+    audience: ${JWT_AUDIENCE:mealgo-api}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:30d}
+    private-key: ${JWT_PRIVATE_KEY:}
+    public-key: ${JWT_PUBLIC_KEY:}
