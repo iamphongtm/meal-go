@@ -11,15 +11,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -60,10 +63,12 @@ public class RestaurantController {
                     required = true,
                     example = "7f901364-615c-4176-a587-1045ec26981f"
             )
-            @RequestHeader("X-Owner-Id") UUID ownerId,
-            @Valid @RequestBody RestaurantCreationRequest request
-    ) {
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody RestaurantCreationRequest request) {
+        String subject = jwt.getSubject();
+
+        UUID ownerId = UUID.fromString(Objects.requireNonNull(subject));
         restaurantService.init(request, ownerId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

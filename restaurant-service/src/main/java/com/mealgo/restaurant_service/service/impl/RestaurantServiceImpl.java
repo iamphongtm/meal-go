@@ -4,25 +4,9 @@ import com.mealgo.restaurant_service.domain.enums.CategoryStatus;
 import com.mealgo.restaurant_service.domain.enums.OptionGroupStatus;
 import com.mealgo.restaurant_service.domain.enums.OptionStatus;
 import com.mealgo.restaurant_service.domain.enums.RestaurantStatus;
-import com.mealgo.restaurant_service.domain.model.Address;
-import com.mealgo.restaurant_service.domain.model.MenuCategory;
-import com.mealgo.restaurant_service.domain.model.MenuItem;
-import com.mealgo.restaurant_service.domain.model.Option;
-import com.mealgo.restaurant_service.domain.model.OptionGroup;
-import com.mealgo.restaurant_service.domain.model.Restaurant;
-import com.mealgo.restaurant_service.domain.model.Ward;
-import com.mealgo.restaurant_service.domain.repository.MenuCategoryRepository;
-import com.mealgo.restaurant_service.domain.repository.MenuItemRepository;
-import com.mealgo.restaurant_service.domain.repository.OptionGroupRepository;
-import com.mealgo.restaurant_service.domain.repository.OptionRepository;
-import com.mealgo.restaurant_service.domain.repository.ProvinceRepository;
-import com.mealgo.restaurant_service.domain.repository.RestaurantRepository;
-import com.mealgo.restaurant_service.domain.repository.WardRepository;
-import com.mealgo.restaurant_service.dto.request.CategoryCreationRequest;
-import com.mealgo.restaurant_service.dto.request.MenuCreationRequest;
-import com.mealgo.restaurant_service.dto.request.OptionCreationRequest;
-import com.mealgo.restaurant_service.dto.request.OptionGroupCreationRequest;
-import com.mealgo.restaurant_service.dto.request.RestaurantCreationRequest;
+import com.mealgo.restaurant_service.domain.model.*;
+import com.mealgo.restaurant_service.domain.repository.*;
+import com.mealgo.restaurant_service.dto.request.*;
 import com.mealgo.restaurant_service.dto.response.CategoryCreationResponse;
 import com.mealgo.restaurant_service.dto.response.OptionCreationResponse;
 import com.mealgo.restaurant_service.dto.response.OptionGroupCreationResponse;
@@ -55,6 +39,11 @@ public class RestaurantServiceImpl implements RestaurantService, MenuInitializat
     public void init(RestaurantCreationRequest request, UUID ownerId) {
         log.debug("Initializing restaurant: ownerId={}", ownerId);
 
+        //check unique restaurant
+        if (restaurantRepository.existsByOwnerId(ownerId)) {
+            throw new BusinessException(ErrorCode.RESTAURANT_CONFLICT, ownerId.toString());
+        }
+
         Ward ward = wardRepository.findByCode(request.wardCode()).orElseThrow(
                 () -> new BusinessException(ErrorCode.WARD_NOT_FOUND, request.wardCode().toString())
         );
@@ -79,8 +68,11 @@ public class RestaurantServiceImpl implements RestaurantService, MenuInitializat
     }
 
     @Override
-    public CategoryCreationResponse createCategory(UUID restaurantId, CategoryCreationRequest request) {
+    public CategoryCreationResponse createCategory(UUID restaurantId, UUID ownerId, CategoryCreationRequest request) {
         log.debug("Creating menu category: restaurantId={}, categoryName={}", restaurantId, request.getName());
+
+        Restaurant restaurant = restaurantRepository.findByIdAndOwnerId(restaurantId, ownerId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESTAURANT_NOT_FOUND, restaurantId.toString()));
 
         if (categoryRepository.existsByRestaurantIdAndNameIgnoreCaseAndDeletedAtIsNull(
                 restaurantId, request.getName())) {
@@ -94,7 +86,7 @@ public class RestaurantServiceImpl implements RestaurantService, MenuInitializat
                 .name(request.getName())
                 .displayOrder(displayOrder)
                 .status(CategoryStatus.ACTIVE)
-                .restaurant(getRestaurant(restaurantId))
+                .restaurant(restaurant)
                 .build());
 
         log.info("Menu category created successfully: categoryId={}, restaurantId={}, displayOrder={}",

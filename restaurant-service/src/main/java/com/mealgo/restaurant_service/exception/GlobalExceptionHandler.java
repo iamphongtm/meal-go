@@ -4,7 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,12 +16,16 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URI;
 import java.util.*;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private final MessageSource messageSource;
 
     @Value("${spring.application.name}")
@@ -27,9 +35,12 @@ public class GlobalExceptionHandler {
         this.messageSource = messageSource;
     }
 
-    @ExceptionHandler(value = MethodArgumentNotValidException.class)
-    public ResponseEntity<ProblemDetail> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        //urn:mealgo:restaurant-service:validation-error
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
         String urn = "urn:mealgo:" + servicename + ":validation-error";
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
@@ -37,7 +48,7 @@ public class GlobalExceptionHandler {
         );
         problemDetail.setTitle("Validation Failed");
         problemDetail.setType(URI.create(urn));
-        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
 
         List<Map<String, String>> invalidParams = new ArrayList<>();
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
@@ -47,14 +58,15 @@ public class GlobalExceptionHandler {
             invalidParams.add(errorMap);
         }
         problemDetail.setProperty("invalid_params", invalidParams);
-        return ResponseEntity.badRequest().body(problemDetail);
+        return handleExceptionInternal(ex, problemDetail, headers, status, request);
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ProblemDetail> handleHttpMessageNotReadable(
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
-            HttpServletRequest request
-    ) {
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Request body is malformed or contains an invalid value."
@@ -64,9 +76,9 @@ public class GlobalExceptionHandler {
         problem.setType(URI.create(
                 "urn:mealgo:" + servicename + ":invalid-request-body"
         ));
-        problem.setInstance(URI.create(request.getRequestURI()));
+        problem.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
 
-        return ResponseEntity.badRequest().body(problem);
+        return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
     @ExceptionHandler(value = BusinessException.class)
@@ -87,5 +99,22 @@ public class GlobalExceptionHandler {
         problemDetail.setInstance(URI.create(request.getRequestURI()));
 
         return new ResponseEntity<>(problemDetail, errorCode.getStatus());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleUnexpectedException(Exception ex, HttpServletRequest request) {
+        logger.error("Unhandled exception for request " + request.getRequestURI(), ex);
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred."
+        );
+        problemDetail.setTitle("Internal Server Error");
+        problemDetail.setType(URI.create(
+                "urn:mealgo:" + servicename + ":internal-server-error"
+        ));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+
+        return ResponseEntity.internalServerError().body(problemDetail);
     }
 }

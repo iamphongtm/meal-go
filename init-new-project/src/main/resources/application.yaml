@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: init-new-project
+  mvc:
+    problemdetails:
+      enabled: true
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+server:
+  port: 8080

@@ -18,13 +18,13 @@ import java.util.UUID;
 @Builder
 public class Restaurant extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private UUID ownerId;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false)
     private String phone;
 
     @Column(nullable = false)

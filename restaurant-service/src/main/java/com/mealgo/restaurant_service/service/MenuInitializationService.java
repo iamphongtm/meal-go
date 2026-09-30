@@ -11,7 +11,7 @@ import com.mealgo.restaurant_service.dto.response.OptionGroupCreationResponse;
 import java.util.UUID;
 
 public interface MenuInitializationService {
-    CategoryCreationResponse createCategory(UUID restaurantId, CategoryCreationRequest request);
+    CategoryCreationResponse createCategory(UUID restaurantId, UUID ownerId, CategoryCreationRequest request);
 
     void initMenu(UUID restaurantId, MenuCreationRequest request);
 

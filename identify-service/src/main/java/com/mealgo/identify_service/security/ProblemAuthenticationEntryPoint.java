@@ -3,6 +3,7 @@ package com.mealgo.identify_service.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,7 +29,7 @@ public class ProblemAuthenticationEntryPoint implements AuthenticationEntryPoint
     public void commence(
             HttpServletRequest request,
             HttpServletResponse response,
-            AuthenticationException authException) throws IOException {
+            @NonNull AuthenticationException authException) throws IOException {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Authentication is required or the access token is invalid.");
         problem.setTitle("Unauthorized");
         problem.setType(URI.create("urn:mealgo:" + serviceName + ":invalid-token"));
