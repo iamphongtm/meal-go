@@ -1,0 +1,29 @@
+services:
+  restaurant-db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mealgo_restaurant
+      POSTGRES_USER: restaurant
+      POSTGRES_PASSWORD: restaurant
+    # Enable logical decoding and replication for Debezium CDC.
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=10
+      - -c
+      - max_wal_senders=10
+    ports:
+      - "127.0.0.1:${RESTAURANT_DB_PORT:-5432}:5432"
+    volumes:
+      - restaurant-db-data-pg18:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restaurant -d mealgo_restaurant"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  restaurant-db-data-pg18:

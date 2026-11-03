@@ -1,0 +1,9 @@
+# Requires Docker Compose >= 2.20.0.
+# Infrastructure only; run the Java applications separately with IDE/Maven.
+# A separate project name keeps personal volumes/networks apart from the team stack.
+name: mealgo-personal
+include:
+  - ./infra/restaurant/compose.yml
+  - ./infra/search/compose.yml
+  - ./infra/kafka/compose.yml
+  - ./infra/debezium/compose.yml
