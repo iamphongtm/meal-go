@@ -35,20 +35,15 @@ before starting; do not blindly baseline or run migrations against old data.
 
 ## Coordinates and existing Elasticsearch data
 
-Events contain `latitude` and `longitude`; the search mapper converts these into
+Events contain `latitude` and `longitude`; the search index adapter converts these into
 `location: { "lat": ..., "lon": ... }`. Both coordinates must be present.
 
-The Java initializer bootstraps a new index but does not migrate an existing
-index when the alias already exists. Add the field explicitly when upgrading:
-
-```http
-PUT /search_catalog_v1/_mapping
-{
-  "properties": {
-    "location": { "type": "geo_point" }
-  }
-}
-```
+The current projection uses `restaurants_v1` with alias `restaurants`, one document
+per restaurant, and nested `menuItems`. It replaces the old separate catalog
+documents; adding a mapping field to `search_catalog_v1` alone is not a migration.
+The Java initializer creates the new index/alias when missing but does not delete
+old indices or migrate existing documents. See `search-service/README.md` for
+controlled replay and retention limitations.
 
 Existing documents require a separate backfill or controlled event replay.
 Restarting the Kafka consumer does not replay already committed offsets.
@@ -60,6 +55,24 @@ Restarting the Kafka consumer does not replay already committed offsets.
 - Removed credential-like comments from the imported AWS configuration.
 - Updated the restaurant controller test payload and assertions for coordinates.
 
-Verification: Maven reactor tests passed with 21 restaurant tests; the imported
-search service currently has no automated tests. This is not an end-to-end
-runtime validation of PostgreSQL, Kafka, Debezium, S3, or Elasticsearch.
+## Follow-up synchronization
+
+Imported search-service changes from source commit `c258247` on branch
+`search-service`, with the user's permission to publish these services. The source
+frontend commit `cabf171` is deliberately outside this synchronization scope.
+Restaurant code already matches apart from personal build/configuration and test
+adjustments, which are retained. No infrastructure or common-web changes are needed.
+
+- Replaced catalog documents with restaurant projections and nested menu items.
+- Added per-entity timestamp checks for duplicate/out-of-order events.
+- Added nearby and dish-name search APIs, including up to five matching dishes.
+- Added search unit tests and an opt-in Elasticsearch integration test.
+- Retained root-level service layout, Maven parent paths, compiler version,
+  sanitized configuration, and restaurant coordinate test assertions.
+
+See `search-service/SEARCH_API.md` for API details. Tests do not constitute
+end-to-end validation of PostgreSQL, Kafka, Debezium, S3, or Elasticsearch.
+
+Follow-up verification: the JDK 21 Maven reactor passed with 21 restaurant tests
+and 13 search tests passing. One opt-in Elasticsearch integration test was skipped.
+`git diff --check` passed. No infrastructure stack or connector was started or changed.

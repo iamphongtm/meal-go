@@ -1,73 +1,70 @@
-# Search catalog indexer
+# Restaurant search service
 
-Consumes raw Debezium JSON from `restaurant.public.outbox_events` and writes
-`RestaurantCreated` / `MenuItemCreated` (also accepts `RESTAURANT_CREATED` /
-`MENU_ITEM_CREATED`) to the Elasticsearch alias `search_catalog`.
-No search REST API or business update/delete handlers are implemented yet.
+## Projection
 
-## Local setup
+- Index: `restaurants_v1`; read/write alias: `restaurants`.
+- One document per restaurant, `_id = restaurantId`.
+- `menuItems` is `nested`, with no category fields or separate menu-item documents.
+- Startup initializes the index/alias if missing; it does not delete old catalog indices.
+- Local index settings use one shard and zero replicas; adjust replicas for production.
 
-Start Kafka, Elasticsearch and Kafka Connect using the root Compose configuration.
-The PostgreSQL publication and Debezium connector must already be configured.
+The consumer reads JSON payloads from `mealgo.restaurant.events` and
+`mealgo.menu-item.events`. Records need an `eventType` header (`RestaurantCreated`
+or `MenuItemCreated`), the aggregate UUID as key, and `occurredAt` in the payload.
 
-Before starting the service, create the index only if it does not already exist:
+Restaurant events patch restaurant fields without overwriting menu items. Menu
+events upsert an array element by `menuItemId`. Scripted upserts handle menu events
+arriving before restaurant events.
+Repeated/older events are ignored using per-restaurant and per-item timestamps.
+Equal timestamps are treated as duplicates; authoritative aggregate versions would
+be needed to distinguish different updates sharing the same timestamp.
+
+Only create events currently exist in the producer/consumer contract. Business
+updates, deletes and status changes after creation are NOT synchronized yet.
+
+## Scope
+
+The service initializes the index, projects Kafka events into Elasticsearch, and
+exposes nearby restaurant and dish-name search APIs. See [SEARCH_API.md](SEARCH_API.md)
+for endpoints, response examples, and pagination constraints.
+
+## Local run
+
+Requires Java 21, Kafka and Elasticsearch.
 
 ```powershell
-Invoke-WebRequest http://localhost:29200/search_catalog_v1 -Method Head
-# If 404 (and search_catalog is not already assigned), create it:
-$mapping = Get-Content services/search-service/src/main/resources/elasticsearch/search_catalog_v1.json -Raw -Encoding UTF8
-Invoke-RestMethod -Uri http://localhost:29200/search_catalog_v1 -Method Put -ContentType 'application/json; charset=utf-8' -Body ([System.Text.Encoding]::UTF8.GetBytes($mapping))
+.\search-service\mvnw.cmd -f common-web/pom.xml install -DskipTests
+.\search-service\mvnw.cmd -f search-service/pom.xml spring-boot:run
 ```
 
-Do not delete/recreate an existing index. The mapping uses local single-node
-settings (one shard, no replica). The adapter requires an alias to avoid accidentally
-creating an unmapped index. Mapping changes are not automatically applied.
-
-Run from the repository root with Java 21 and Maven:
-
-```powershell
-mvn -f services/search-service/pom.xml test '-Dtest=DebeziumOutboxParserTest,IndexOutboxEventUseCaseTest,OutboxKafkaConsumerTest'
-mvn -f services/search-service/pom.xml spring-boot:run
-```
-
-Environment variables:
-
-| Variable | Default on host |
+| Environment variable | Default |
 | --- | --- |
 | KAFKA_BOOTSTRAP_SERVERS | localhost:29090 |
 | KAFKA_CONSUMER_GROUP | search-catalog-indexer |
 | ELASTICSEARCH_URIS | http://localhost:29200 |
-| SEARCH_INDEX | search_catalog |
-| SEARCH_OUTBOX_TOPIC | restaurant.public.outbox_events |
 
-In Docker, use `kafka:9092` and `http://elasticsearch:9200`.
-The consumer starts from earliest only when its group has no committed offset.
-Changing the group replays retained events; it cannot recover events already
-removed by Kafka retention. Historical menu events may lack restaurantName;
-they are indexed without it and need a separate backfill if required.
+`app.search.index` defaults to `restaurants`. Bootstrap currently uses the fixed
+`restaurants` alias and `restaurants_v1` index; a custom alias must be provisioned
+separately before overriding that property.
 
-## Processing and errors
+### Existing data
 
-Record offsets are acknowledged after successful indexing, or after successful
-dead-letter publication. Invalid payloads go directly to `<source-topic>.DLT`;
-other failures get three retries two seconds apart, then go to DLT. DLT publish
-failures are propagated rather than treated as recovered. Monitor and replay
-the DLT after fixing errors, especially after an Elasticsearch outage.
-DLT has one partition/replica for the local environment.
+The new index starts empty. Restarting with the old consumer group does not replay
+committed events. To rebuild from retained events, stop the old instance and start
+with a dedicated new `KAFKA_CONSUMER_GROUP`, after confirming both topics contain
+the required history. A new group reads from earliest available offsets. Do not
+run the old catalog writer with the same group while rebuilding.
 
-Tombstones, outbox row updates/deletes and unsupported event types are ignored.
-Outbox cleanup is not a business entity deletion. Fixed document IDs make replay
-of the same create event overwrite the same document, not duplicate it. This is
-not exactly-once processing or protection against out-of-order business updates.
-Add aggregate versions before implementing update events.
+Replay cannot restore events removed by retention, and creation events do not
+represent subsequent database changes. A full backfill from current source data
+is required in those cases; no automated database backfill is included here.
 
-Create a real restaurant/menu item through the restaurant API, then inspect:
+## Tests
 
 ```powershell
-Invoke-RestMethod http://localhost:29200/search_catalog/_count
-Invoke-RestMethod http://localhost:29200/search_catalog/_search
+.\search-service\mvnw.cmd -f search-service/pom.xml test
+# Optional: creates and deletes ONLY a unique test index in local Elasticsearch.
+$env:RUN_SEARCH_INTEGRATION_TESTS = 'true'
+$env:TEST_ELASTICSEARCH_URL = 'http://localhost:29200'
+.\search-service\mvnw.cmd -f search-service/pom.xml test
 ```
-
-Search visibility may lag indexing until Elasticsearch refreshes. The test event
-`TEST_CREATED` is ignored. Restaurant renames/status changes and entity deletes
-will not synchronize until the corresponding business events and handlers exist.

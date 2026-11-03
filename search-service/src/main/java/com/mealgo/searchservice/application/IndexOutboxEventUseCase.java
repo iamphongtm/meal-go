@@ -3,7 +3,7 @@ package com.mealgo.searchservice.application;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mealgo.searchservice.application.port.CatalogIndexPort;
+import com.mealgo.searchservice.application.port.RestaurantIndexPort;
 import com.mealgo.searchservice.domain.CatalogEventType;
 import com.mealgo.searchservice.domain.MenuItemDocument;
 import com.mealgo.searchservice.domain.RestaurantDocument;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class IndexOutboxEventUseCase {
 
-    private final CatalogIndexPort indexPort;
+    private final RestaurantIndexPort indexPort;
     private final ObjectMapper objectMapper;
 
     public void handle(CatalogEventType eventType, UUID aggregateId, Instant occurredAt, JsonNode payload) {
@@ -36,12 +36,11 @@ public class IndexOutboxEventUseCase {
         requireText(event.name(), "name");
         requireText(event.status(), "status");
 
-        indexPort.upsert(RestaurantDocument.builder()
+        indexPort.upsertRestaurant(RestaurantDocument.builder()
                 .restaurantId(event.restaurantId())
                 .name(event.name())
                 .status(event.status())
                 .addressLine(event.addressLine())
-                .wardCode(event.wardCode())
                 .latitude(event.latitude())
                 .longitude(event.longitude())
                 .updatedAt(occurredAt)
@@ -54,14 +53,13 @@ public class IndexOutboxEventUseCase {
         requireText(event.name(), "name");
         requireText(event.status(), "status");
 
-        if (event.restaurantId() == null || event.categoryId() == null || event.basePrice() == null) {
-            throw new IllegalArgumentException("Menu item requires restaurantId, categoryId and basePrice");
+        if (event.restaurantId() == null || event.basePrice() == null) {
+            throw new IllegalArgumentException("Menu item requires restaurantId and basePrice");
         }
 
-        indexPort.upsert(MenuItemDocument.builder()
+        indexPort.upsertMenuItem(MenuItemDocument.builder()
                 .menuItemId(event.menuItemId())
                 .restaurantId(event.restaurantId())
-                .categoryId(event.categoryId())
                 .name(event.name())
                 .basePrice(event.basePrice())
                 .imageUrl(event.imageUrl())
@@ -88,7 +86,6 @@ public class IndexOutboxEventUseCase {
             String name,
             String status,
             String addressLine,
-            Integer wardCode,
             Double latitude,
             Double longitude
     ) {}
@@ -96,7 +93,6 @@ public class IndexOutboxEventUseCase {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record MenuItemEvent(UUID menuItemId,
                                 UUID restaurantId,
-                                UUID categoryId,
                                 String name,
                                 BigDecimal basePrice,
                                 String imageUrl,

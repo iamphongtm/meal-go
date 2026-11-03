@@ -21,7 +21,7 @@ spring:
 
 app:
   search:
-    index: search_catalog
+    index: restaurants
 
   kafka:
     inbound-topic:

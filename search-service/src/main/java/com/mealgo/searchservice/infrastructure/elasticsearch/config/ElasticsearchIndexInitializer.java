@@ -13,10 +13,10 @@ import java.io.InputStream;
 public class ElasticsearchIndexInitializer {
     private final ElasticsearchClient client;
 
-    private static final String ALIAS = "search_catalog";
-    private static final String INITIAL_INDEX = "search_catalog_v1";
+    private static final String ALIAS = "restaurants";
+    private static final String INITIAL_INDEX = "restaurants_v1";
     private static final String MAPPING_RESOURCE =
-            "elasticsearch/search_catalog_v1.json";
+            "elasticsearch/restaurants_v1.json";
 
     public void initialize() throws IOException {
         // 1. Kiểm tra alias.

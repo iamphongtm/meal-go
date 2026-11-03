@@ -12,29 +12,14 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @Builder
-public class RestaurantDocument implements CatalogDocument {
+public class RestaurantDocument {
     private final UUID restaurantId;
     private final String name;
     private final String status;
     private final String addressLine;
-    private final Integer wardCode;
     private final Double latitude;
     private final Double longitude;
     private final Instant updatedAt;
 
 
-    @Override
-    public CatalogType type() {
-        return CatalogType.RESTAURANT;
-    }
-
-    @Override
-    public UUID entityId() {
-        return restaurantId;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
 }
