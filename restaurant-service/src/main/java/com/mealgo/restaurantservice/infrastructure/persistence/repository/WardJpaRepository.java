@@ -5,8 +5,11 @@ import com.mealgo.restaurantservice.infrastructure.persistence.entity.WardJpaEnt
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface WardJpaRepository extends JpaRepository<WardJpaEntity, Integer> {
+    List<WardJpaEntity> findByProvince_CodeOrderByNameAscCodeAsc(Integer provinceCode);
+
     Optional<Ward> findByCode(Integer code);
 }
