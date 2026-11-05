@@ -1,6 +1,8 @@
 package com.mealgo.restaurantservice.api.rest.controller;
 
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantUseCase;
+import com.mealgo.restaurantservice.application.port.in.restaurant.GetMyRestaurantUseCase;
+import com.mealgo.restaurantservice.application.port.in.restaurant.MyRestaurantResult;
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantCommand;
 import com.mealgo.restaurantservice.api.rest.dto.request.RegisterRestaurantRequest;
 import com.mealgo.restaurantservice.api.rest.dto.response.RegisterRestaurantResponse;
@@ -21,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -34,6 +37,25 @@ import org.springframework.http.ResponseEntity;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RestaurantController {
     RegisterRestaurantUseCase registerRestaurantUseCase;
+    GetMyRestaurantUseCase getMyRestaurantUseCase;
+
+    @Operation(
+            operationId = "getMyRestaurant",
+            summary = "Get the authenticated owner's restaurant",
+            description = "Returns the restaurant identifier, name, and status for the authenticated owner."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Restaurant found"),
+            @ApiResponse(responseCode = "404", description = "The authenticated owner has no restaurant",
+                    content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                            schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    @GetMapping("/me")
+    public MyRestaurantResult getMyRestaurant(
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        return getMyRestaurantUseCase.getMyRestaurant(user.userId());
+    }
 
     @Operation(
             operationId = "registerRestaurant",

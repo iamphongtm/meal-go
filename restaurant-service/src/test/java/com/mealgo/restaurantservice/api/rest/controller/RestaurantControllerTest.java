@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RestaurantControllerTest {
     private final RegisterRestaurantUseCase useCase = mock(RegisterRestaurantUseCase.class);
     private final MockMvc mvc = MockMvcBuilders
-            .standaloneSetup(new RestaurantController(useCase))
+            .standaloneSetup(new RestaurantController(useCase, mock(com.mealgo.restaurantservice.application.port.in.restaurant.GetMyRestaurantUseCase.class)))
             .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
             .build();
 
