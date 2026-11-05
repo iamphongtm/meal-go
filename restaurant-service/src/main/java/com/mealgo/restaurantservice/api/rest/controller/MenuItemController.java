@@ -74,6 +74,6 @@ public class MenuItemController {
         var result = generateUploadUrlUseCase.generateUploadUrl(command);
 
         return ResponseEntity.ok(new PresignedUploadResponse(
-                result.uploadUrl(), result.objectKey(), result.expiresAt(), result.method(), result.requiredHeaders()));
+                result.uploadUrl(), result.objectKey(), result.imageUrl(), result.expiresAt(), result.method(), result.requiredHeaders()));
     }
 }

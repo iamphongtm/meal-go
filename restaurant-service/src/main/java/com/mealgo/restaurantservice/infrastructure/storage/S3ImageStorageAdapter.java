@@ -39,8 +39,10 @@ public class S3ImageStorageAdapter implements ImageStorage {
             }
         });
 
+        String imageUrl = awsProperties.getS3().getCdnBaseUrl().strip().replaceAll("/+$", "") + "/" + objectKey;
+
         return new PresignedUploadResult(
-                signedRequest.url().toExternalForm(), objectKey, signedRequest.expiration(),
+                signedRequest.url().toExternalForm(), objectKey, imageUrl, signedRequest.expiration(),
                 "PUT", Map.copyOf(requiredHeaders));
     }
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 public record PresignedUploadResult(
         String uploadUrl,
         String objectKey,
+        String imageUrl,
         Instant expiresAt,
         String method,
         Map<String, List<String>> requiredHeaders

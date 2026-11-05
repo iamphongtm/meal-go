@@ -43,6 +43,7 @@ public class AWSProperties {
         @DataSizeUnit(DataUnit.BYTES)
         private DataSize maxFileSize;
 
+        @NotBlank
         private String cdnBaseUrl;
 
         @AssertTrue(message = "uploadUrlExpiration must be > 0 and <= 15 minutes")
