@@ -1,11 +1,13 @@
 package com.mealgo.restaurantservice.infrastructure.persistence.repository;
 
+import com.mealgo.restaurantservice.domain.model.category.MenuCategory;
 import com.mealgo.restaurantservice.infrastructure.persistence.entity.MenuCategoryJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -29,4 +31,8 @@ public interface MenuCategoryJpaRepository extends JpaRepository<MenuCategoryJpa
         where c.restaurant.id = :restaurantId
 """)
     int getMaxDisplayOrderByRestaurantId(@Param("restaurantId") UUID restaurantId);
+
+    Optional<MenuCategory> findByIdAndRestaurantId(UUID id, UUID restaurantId);
+
+    boolean existsByRestaurantIdAndNameAndIdNot(UUID restaurantId, String name, UUID id);
 }

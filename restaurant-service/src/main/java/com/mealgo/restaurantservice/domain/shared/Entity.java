@@ -13,4 +13,5 @@ public abstract class Entity<T> {
     public final T getId() {
         return id;
     }
+
 }

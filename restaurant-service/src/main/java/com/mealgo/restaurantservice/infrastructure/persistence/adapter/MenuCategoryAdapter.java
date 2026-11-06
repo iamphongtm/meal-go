@@ -8,6 +8,7 @@ import com.mealgo.restaurantservice.infrastructure.persistence.repository.Restau
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -36,5 +37,20 @@ public class MenuCategoryAdapter implements MenuCategoryRepository {
     @Override
     public int getMaxDisplayOrder(UUID restaurantId) {
         return menuCategoryJpaRepository.getMaxDisplayOrderByRestaurantId(restaurantId);
+    }
+
+    @Override
+    public Optional<MenuCategory> findByIdAndRestaurantId(UUID uuid, UUID restaurantId) {
+        return menuCategoryJpaRepository.findByIdAndRestaurantId(uuid,restaurantId);
+    }
+
+    @Override
+    public boolean existsByRestaurantIdAndNameAndIdNot(UUID restaurantId, String name, UUID uuid) {
+        return menuCategoryJpaRepository.existsByRestaurantIdAndNameAndIdNot(restaurantId, name, uuid);
+    }
+
+    @Override
+    public void delete(UUID uuid) {
+        menuCategoryJpaRepository.deleteById(uuid);
     }
 }

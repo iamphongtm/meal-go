@@ -76,12 +76,15 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
             if (!groupIds.add(groupId)) {
                 throw new BusinessException(OPTION_GROUP_DUPLICATE, groupId);
             }
+
             var group = optionGroupRepository.findByIdAndRestaurantId(groupId, command.restaurantId())
                     .orElseThrow(() -> new BusinessException(OPTION_GROUP_NOT_FOUND, groupId));
+
             if (requested.minSelect() == null || requested.maxSelect() == null
                     || requested.minSelect() < 0 || requested.maxSelect() < 0) {
                 throw new BusinessException(OPTION_GROUP_CONFIGURATION_INVALID, groupId);
             }
+
             if (requested.minSelect() > requested.maxSelect()) {
                 throw new BusinessException(OPTION_GROUP_SELECTION_RANGE_INVALID,
                         requested.minSelect(), requested.maxSelect());
@@ -89,14 +92,18 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
 
             var activeOptions = group.getOptions().stream()
                     .filter(option -> option.getStatus() == OptionStatus.ACTIVE).toList();
+
             if (group.getStatus() != OptionGroupStatus.ACTIVE || activeOptions.isEmpty()
                     || requested.maxSelect() > activeOptions.size()) {
                 throw new BusinessException(OPTION_GROUP_CONFIGURATION_INVALID, groupId);
             }
 
             var optionIds = new HashSet<UUID>();
+
             group.getOptions().forEach(option -> optionIds.add(option.getId()));
+
             var prices = new HashMap<UUID, BigDecimal>();
+
             for (var price : requested.optionPrices()) {
                 if (!optionIds.contains(price.optionId())) {
                     throw new BusinessException(OPTION_NOT_FOUND, price.optionId());
