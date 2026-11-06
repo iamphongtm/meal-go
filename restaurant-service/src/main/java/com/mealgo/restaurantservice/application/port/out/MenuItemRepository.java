@@ -8,4 +8,6 @@ public interface MenuItemRepository {
     int getMaxDisplayOrder(UUID categoryId);
 
     void save(MenuItem menuItem);
+    java.util.Optional<MenuItem> findByIdForUpdate(UUID restaurantId, UUID menuItemId);
+    void updateDetails(MenuItem menuItem);
 }

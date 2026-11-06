@@ -5,6 +5,11 @@ import com.mealgo.restaurantservice.api.rest.dto.request.MenuItemCreationRequest
 import com.mealgo.restaurantservice.api.rest.dto.response.MenuItemCreationResponse;
 import com.mealgo.restaurantservice.application.port.in.menuitem.CreateMenuItemCommand;
 import com.mealgo.restaurantservice.application.port.in.menuitem.CreateMenuItemUseCase;
+import com.mealgo.restaurantservice.application.port.in.menuitem.UpdateMenuItemUseCase;
+import com.mealgo.restaurantservice.application.port.in.menuitem.UpdateMenuItemCommand;
+import com.mealgo.restaurantservice.application.port.in.menuitem.UpdateMenuItemStatusCommand;
+import com.mealgo.restaurantservice.api.rest.dto.request.UpdateMenuItemRequest;
+import com.mealgo.restaurantservice.api.rest.dto.request.UpdateMenuItemStatusRequest;
 import com.mealgo.restaurantservice.api.rest.dto.response.PresignedUploadResponse;
 import com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlCommand;
 import com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlUseCase;
@@ -29,6 +34,27 @@ import java.util.List;
 public class MenuItemController {
     private final GenerateUploadUrlUseCase generateUploadUrlUseCase;
     private final CreateMenuItemUseCase createMenuItemUseCase;
+    private final UpdateMenuItemUseCase updateMenuItemUseCase;
+
+    @PutMapping("/{menuItemId}")
+    @Operation(summary = "Update menu item details without changing linked option groups")
+    public ResponseEntity<Void> updateItem(@PathVariable UUID restaurantId, @PathVariable UUID menuItemId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody UpdateMenuItemRequest request) {
+        updateMenuItemUseCase.update(new UpdateMenuItemCommand(restaurantId, user.userId(), menuItemId,
+                request.categoryId(), request.name(), request.description(), request.basePrice(), request.imageUrl()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{menuItemId}/status")
+    @Operation(summary = "Set menu item status to ACTIVE, SOLD_OUT or INACTIVE")
+    public ResponseEntity<Void> updateItemStatus(@PathVariable UUID restaurantId, @PathVariable UUID menuItemId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody UpdateMenuItemStatusRequest request) {
+        updateMenuItemUseCase.updateStatus(new UpdateMenuItemStatusCommand(
+                restaurantId, user.userId(), menuItemId, request.status()));
+        return ResponseEntity.noContent().build();
+    }
 
     @PostMapping
     @Operation(

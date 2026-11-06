@@ -26,4 +26,24 @@ public class MenuItemAdapter implements MenuItemRepository {
         var categoryReference = menuCategoryJpaRepository.getReferenceById(menuItem.getCategoryId().value());
         menuItemJpaRepository.save(MenuItemPersistenceMapper.toNewEntity(menuItem, categoryReference));
     }
+
+    @Override
+    public java.util.Optional<MenuItem> findByIdForUpdate(UUID restaurantId, UUID menuItemId) {
+        return menuItemJpaRepository.findMerchantItemForUpdate(restaurantId, menuItemId)
+                .map(MenuItemPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public void updateDetails(MenuItem item) {
+        var entity = menuItemJpaRepository.getReferenceById(item.getId().value());
+        entity.setCategory(menuCategoryJpaRepository.getReferenceById(item.getCategoryId().value()));
+        entity.setName(item.getName());
+        entity.setDescription(item.getDescription());
+        entity.setBasePrice(item.getBasePrice());
+        entity.setImageUrl(item.getImageUrl());
+        entity.setStatus(item.getStatus());
+        entity.setDisplayOrder(item.getDisplayOrder());
+        // Do not replace optionGroups: this operation updates scalar fields only.
+        menuItemJpaRepository.save(entity);
+    }
 }

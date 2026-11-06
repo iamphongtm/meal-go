@@ -12,6 +12,19 @@ public final class MenuItemPersistenceMapper {
     private MenuItemPersistenceMapper() {
     }
 
+    public static MenuItem toDomain(MenuItemJpaEntity entity) {
+        var groups = entity.getOptionGroups().stream().map(group ->
+                new com.mealgo.restaurantservice.domain.model.menuitem.MenuItemOptionGroup(
+                        group.getId(), com.mealgo.restaurantservice.domain.model.optiongroup.OptionGroupId.of(group.getOptionGroupId()), group.getMinSelect(), group.getMaxSelect(),
+                        group.getDisplayOrder(), group.getOptionPrices().stream().map(price ->
+                        new com.mealgo.restaurantservice.domain.model.menuitem.MenuItemOptionPrice(
+                                price.getId(), price.getOptionId(), price.getAdditionalPrice())).toList())).toList();
+        return new MenuItem(com.mealgo.restaurantservice.domain.model.menuitem.MenuItemId.of(entity.getId()),
+                com.mealgo.restaurantservice.domain.model.category.MenuCategoryId.of(entity.getCategory().getId()),
+                entity.getName(), entity.getDescription(), entity.getBasePrice(), entity.getImageUrl(),
+                entity.getStatus(), entity.getDisplayOrder(), groups);
+    }
+
     public static MenuItemJpaEntity toNewEntity(MenuItem menuItem, MenuCategoryJpaEntity categoryReference) {
         var entity = new MenuItemJpaEntity();
         entity.setId(menuItem.getId().value());

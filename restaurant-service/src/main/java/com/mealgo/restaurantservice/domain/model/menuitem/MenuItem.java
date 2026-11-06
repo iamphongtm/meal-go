@@ -40,6 +40,16 @@ public final class MenuItem extends Entity<MenuItemId> implements IAggregateRoot
     }
 
     public MenuCategoryId getCategoryId() { return categoryId; }
+    public MenuItem revise(MenuCategoryId categoryId, String name, String description,
+                           BigDecimal basePrice, String imageUrl, int displayOrder) {
+        return new MenuItem(getId(), categoryId, name, description, basePrice, imageUrl,
+                status, displayOrder, optionGroups);
+    }
+
+    public MenuItem changeStatus(MenuItemStatus status) {
+        return new MenuItem(getId(), categoryId, name, description, basePrice, imageUrl,
+                status, displayOrder, optionGroups);
+    }
     public String getName() { return name; }
     public String getDescription() { return description; }
     public BigDecimal getBasePrice() { return basePrice; }

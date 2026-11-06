@@ -8,6 +8,11 @@ import org.springframework.data.repository.query.Param;
 import java.util.UUID;
 
 public interface MenuItemJpaRepository extends JpaRepository<MenuItemJpaEntity, UUID> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select item from MenuItemJpaEntity item where item.id = :itemId and item.category.restaurant.id = :restaurantId")
+    java.util.Optional<MenuItemJpaEntity> findMerchantItemForUpdate(
+            @Param("restaurantId") UUID restaurantId, @Param("itemId") UUID itemId);
+
     java.util.List<MenuItemJpaEntity> findByCategoryRestaurantIdAndIdIn(
             UUID restaurantId, java.util.Collection<UUID> ids);
 
