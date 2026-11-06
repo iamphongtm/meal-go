@@ -3,6 +3,7 @@ package com.mealgo.restaurantservice.api.rest.controller;
 import com.mealgo.restaurantservice.application.port.in.restaurant.GetMyRestaurantUseCase;
 import com.mealgo.restaurantservice.application.port.in.restaurant.MyRestaurantResult;
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantUseCase;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantStatusUseCase;
 import com.mealgo.restaurantservice.domain.enums.RestaurantStatus;
 import com.mealgo.restaurantservice.domain.shared.BusinessException;
 import com.mealgo.restaurantservice.domain.shared.ErrorCode;
@@ -25,7 +26,8 @@ class MyRestaurantControllerTest {
     @Test
     void looksUpAuthenticatedOwnerAndReturnsRestaurantOr404() throws Exception {
         var useCase = mock(GetMyRestaurantUseCase.class);
-        var controller = new RestaurantController(mock(RegisterRestaurantUseCase.class), useCase);
+        var controller = new RestaurantController(mock(RegisterRestaurantUseCase.class), useCase,
+                mock(UpdateRestaurantStatusUseCase.class));
         var mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler(new StaticMessageSource()))

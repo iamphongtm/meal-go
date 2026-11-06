@@ -8,6 +8,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.UUID;
 
 public interface MenuItemJpaRepository extends JpaRepository<MenuItemJpaEntity, UUID> {
+    java.util.List<MenuItemJpaEntity> findByCategoryRestaurantIdAndIdIn(
+            UUID restaurantId, java.util.Collection<UUID> ids);
+
     @Query("""
             select distinct item from MenuItemJpaEntity item
             join fetch item.category category

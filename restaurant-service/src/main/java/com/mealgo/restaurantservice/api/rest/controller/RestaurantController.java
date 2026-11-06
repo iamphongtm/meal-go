@@ -3,6 +3,13 @@ package com.mealgo.restaurantservice.api.rest.controller;
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantUseCase;
 import com.mealgo.restaurantservice.application.port.in.restaurant.GetMyRestaurantUseCase;
 import com.mealgo.restaurantservice.application.port.in.restaurant.MyRestaurantResult;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantStatusUseCase;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantStatusCommand;
+import com.mealgo.restaurantservice.application.port.in.restaurant.RestaurantStatusResult;
+import com.mealgo.restaurantservice.api.rest.dto.request.UpdateRestaurantStatusRequest;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import java.util.UUID;
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantCommand;
 import com.mealgo.restaurantservice.api.rest.dto.request.RegisterRestaurantRequest;
 import com.mealgo.restaurantservice.api.rest.dto.response.RegisterRestaurantResponse;
@@ -38,6 +45,18 @@ import org.springframework.http.ResponseEntity;
 public class RestaurantController {
     RegisterRestaurantUseCase registerRestaurantUseCase;
     GetMyRestaurantUseCase getMyRestaurantUseCase;
+    UpdateRestaurantStatusUseCase updateRestaurantStatusUseCase;
+
+    @PatchMapping("/{restaurantId}/status")
+    @Operation(summary = "Update restaurant order acceptance status")
+    public RestaurantStatusResult updateStatus(
+            @PathVariable UUID restaurantId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody UpdateRestaurantStatusRequest request) {
+        return updateRestaurantStatusUseCase.updateStatus(
+                new UpdateRestaurantStatusCommand(
+                        restaurantId, user.userId(), request.status(), request.pauseReason()));
+    }
 
     @Operation(
             operationId = "getMyRestaurant",

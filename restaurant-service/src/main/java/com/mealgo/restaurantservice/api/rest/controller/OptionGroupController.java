@@ -1,6 +1,9 @@
 package com.mealgo.restaurantservice.api.rest.controller;
 
 import com.mealgo.restaurantservice.api.rest.dto.request.OptionGroupCreationRequest;
+import com.mealgo.restaurantservice.api.rest.dto.request.OptionGroupItemsRequest;
+import com.mealgo.restaurantservice.application.port.in.optiongroup.OptionGroupItems;
+import com.mealgo.restaurantservice.application.usecase.ManageOptionGroupItemsUseCase;
 import com.mealgo.restaurantservice.application.port.in.optiongroup.ManageOptionGroupUseCase;
 import com.mealgo.restaurantservice.application.port.in.optiongroup.OptionGroupCreationCommand;
 import com.mealgo.restaurantservice.infrastructure.config.AuthenticatedUser;
@@ -23,6 +26,29 @@ import java.util.UUID;
 public class OptionGroupController {
 
     private final ManageOptionGroupUseCase optionGroupUseCase;
+    private final ManageOptionGroupItemsUseCase groupItemsUseCase;
+
+    @GetMapping
+    @Operation(summary = "List shared option groups, active options and linked menu items")
+    public java.util.List<OptionGroupItems> list(
+            @PathVariable UUID restaurantId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
+        return groupItemsUseCase.list(restaurantId, user.userId());
+    }
+
+    @PutMapping("/{optionGroupId}/menu-items")
+    @Operation(summary = "Replace the menu items linked to this group only")
+    public ResponseEntity<Void> replaceItems(
+            @PathVariable UUID restaurantId, @PathVariable UUID optionGroupId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody OptionGroupItemsRequest request) {
+        var items = request.items().stream().map(item -> new OptionGroupItems.ItemConfiguration(
+                item.menuItemId(), item.minSelect(), item.maxSelect(), item.optionPrices().stream()
+                .map(price -> new OptionGroupItems.OptionPrice(price.optionId(), price.additionalPrice()))
+                .toList())).toList();
+        groupItemsUseCase.replace(restaurantId, user.userId(), optionGroupId, items);
+        return ResponseEntity.noContent().build();
+    }
 
     @PostMapping
     @Operation(summary = "Create a shared option group with its options")

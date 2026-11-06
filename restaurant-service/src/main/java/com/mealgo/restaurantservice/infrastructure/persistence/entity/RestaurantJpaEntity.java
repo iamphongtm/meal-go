@@ -30,6 +30,9 @@ public class RestaurantJpaEntity extends BaseJpaEntity {
     @Column(nullable = false, length = 30)
     private RestaurantStatus status;
 
+    @Column(name = "pause_reason", length = 30)
+    private String pauseReason;
+
     @Embedded
     private AddressEmbeddable address;
 

@@ -9,6 +9,9 @@ import org.springframework.data.jpa.repository.EntityGraph;
 
 public interface OptionGroupJpaRepository extends JpaRepository<OptionGroupJpaEntity, UUID> {
     @EntityGraph(attributePaths = "options")
+    java.util.List<OptionGroupJpaEntity> findByRestaurantIdOrderByNameAsc(UUID restaurantId);
+
+    @EntityGraph(attributePaths = "options")
     java.util.List<OptionGroupJpaEntity> findByRestaurantIdAndIdIn(
             UUID restaurantId, java.util.Collection<UUID> ids);
 
