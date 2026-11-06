@@ -1,6 +1,6 @@
 # Local restaurant/search infrastructure
 
-Requires Docker with Compose **2.20+** (`include` support), JDK 21, and sufficient
+Requires Docker with Compose **2.24+** (`include` and optional `env_file` support), JDK 21, and sufficient
 Docker memory (allow at least 4 GB). This stack is for local development only:
 Elasticsearch/Kafka/management UIs have no authentication and PostgreSQL uses
 development credentials. Published ports bind only to `127.0.0.1`.
@@ -12,6 +12,7 @@ Run from the repository root:
 ```powershell
 Copy-Item .env.example .env
 docker compose config --quiet
+docker compose build restaurant-service search-service
 docker compose up -d
 docker compose ps
 ```
@@ -29,15 +30,35 @@ or change **all conflicting ports** in `.env` before starting this one.
 | Kafka Connect | `http://localhost:28083` |
 | Elasticsearch | `http://localhost:29200` |
 | Kibana | `http://localhost:25601` |
+| Restaurant API | `http://localhost:8030` |
+| Search API | `http://localhost:8090` |
 
 Containers use `kafka:9092` and `restaurant-db:5432`; the Debezium connector
 configuration already targets these internal endpoints. Host ports may change
 without changing connector JSON.
 
-## Run Java applications
+## Containerized Java applications
 
-Compose starts infrastructure, **not the Java services**. Set `JAVA_HOME` to JDK
-21 and build/install the reactor before launching applications independently:
+Compose now includes both Java services using `infra/docker/java-service.Dockerfile`.
+Before starting them, create `restaurant-service/.env` from
+`restaurant-service/.env.example` and configure your own AWS values. Do not
+overwrite an existing file or commit credentials. Stop IDE/Maven instances using
+the same HTTP ports. Set `RESTAURANT_SERVICE_PORT` and `SEARCH_SERVICE_PORT` in the
+root `.env` to override the default host ports; all bindings remain localhost-only.
+
+Applications use internal database, Kafka and Elasticsearch endpoints. Builds use
+JDK 21 and a non-root JRE runtime, exclude local secrets/build artifacts, and skip
+tests; run Maven tests separately. Starting the applications does not automatically
+register Debezium or reset any data. Configure the connector after restaurant-service
+has created the outbox table, as described below.
+
+To start infrastructure only, explicitly select `restaurant-db`, `kafka`, `kafka-ui`,
+`kafka-connect`, `elasticsearch` and `kibana` in the `docker compose up -d` command.
+
+## Run Java applications with IDE/Maven instead
+
+Do not start containerized copies of the applications at the same time. Set
+`JAVA_HOME` to JDK 21 and build/install the reactor before launching independently:
 
 ```powershell
 .\restaurant-service\mvnw.cmd -f pom.xml install -DskipTests

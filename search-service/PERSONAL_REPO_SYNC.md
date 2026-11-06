@@ -168,7 +168,9 @@ không sử dụng kết quả cũ để khẳng định code mới đã đượ
 - Restart Kafka consumer không tự đọc lại event đã commit offset.
 - Với database cũ, cần kiểm tra tương thích Flyway và sao lưu trước khi migrate;
   không tự baseline hoặc xóa database.
-- Compose hiện chỉ chạy hạ tầng. Hai ứng dụng Java vẫn chạy bằng IDE/Maven.
+- Compose đã hỗ trợ cả hai ứng dụng Java qua shared Dockerfile; có thể chạy
+  IDE/Maven thay thế nhưng không chạy hai bản cùng port. Đường dẫn service trong
+  Compose phải theo cấu trúc riêng của từng repo.
 - Chỉ đăng ký connector sau khi restaurant-service đã tạo `public.outbox_events`;
   kiểm tra cả connector/task ở trạng thái `RUNNING`.
 - Không chạy `docker compose down -v` nếu chưa được yêu cầu xóa dữ liệu.

@@ -1,4 +1,33 @@
 services:
+  restaurant-service:
+    build:
+      context: ../..
+      dockerfile: infra/docker/java-service.Dockerfile
+      args:
+        SERVICE_PATH: restaurant-service
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: ../../restaurant-service/.env
+        required: false
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://restaurant-db:5432/mealgo_restaurant
+      SPRING_DATASOURCE_USERNAME: restaurant
+      SPRING_DATASOURCE_PASSWORD: restaurant
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "127.0.0.1:${RESTAURANT_SERVICE_PORT:-8030}:8030"
+    depends_on:
+      restaurant-db:
+        condition: service_healthy
+    healthcheck:
+      # HTTP readiness only: protected routes return 401/403 without owner headers.
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8030/restaurants/not-a-uuid/menu); case \"$$code\" in 400|401|403) exit 0;; *) exit 1;; esac"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
   restaurant-db:
     image: postgres:18
     restart: unless-stopped
