@@ -28,5 +28,11 @@ app:
       restaurant: mealgo.restaurant.events
       menu-item: mealgo.menu-item.events
 
+vietmap:
+  api-key: ${VIETMAP_API_KEY:}
+  base-url: ${VIETMAP_BASE_URL:https://maps.vietmap.vn}
+  connect-timeout: ${VIETMAP_CONNECT_TIMEOUT:3s}
+  read-timeout: ${VIETMAP_READ_TIMEOUT:5s}
+
 server:
   port: 8090

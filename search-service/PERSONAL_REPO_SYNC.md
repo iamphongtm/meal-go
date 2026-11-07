@@ -134,6 +134,12 @@ không sử dụng kết quả cũ để khẳng định code mới đã đượ
 
 - Chỉ stage các file đã kiểm tra trong phạm vi đồng bộ.
 - Chia commit theo thay đổi thực tế, dùng message mô tả đúng nội dung.
+- Commit subject phải tự nhiên, mô tả tính năng/sửa lỗi/refactor thực tế; không
+  dùng chữ `sync` hoặc tiêu đề chung chung chỉ nói việc đồng bộ. Ví dụ:
+  `feat(restaurant): add menu category update and deletion` hoặc
+  `refactor(restaurant): simplify option group item configuration`.
+- Quy tắc đặt subject không thay thế yêu cầu ghi nguồn: nếu import snapshot,
+  vẫn nêu nguồn trung thực trong commit body, không ngụ ý tự viết code của người khác.
 - Giữ thời gian commit thực tế; không backdate, giả lịch sử hoạt động, hoặc gán
   công lao của người khác cho người dùng. Với snapshot import, ghi nguồn rõ ràng.
 - Khi người dùng đã yêu cầu đồng bộ và push, push vào
@@ -168,9 +174,7 @@ không sử dụng kết quả cũ để khẳng định code mới đã đượ
 - Restart Kafka consumer không tự đọc lại event đã commit offset.
 - Với database cũ, cần kiểm tra tương thích Flyway và sao lưu trước khi migrate;
   không tự baseline hoặc xóa database.
-- Compose đã hỗ trợ cả hai ứng dụng Java qua shared Dockerfile; có thể chạy
-  IDE/Maven thay thế nhưng không chạy hai bản cùng port. Đường dẫn service trong
-  Compose phải theo cấu trúc riêng của từng repo.
+- Compose hiện chỉ chạy hạ tầng. Hai ứng dụng Java vẫn chạy bằng IDE/Maven.
 - Chỉ đăng ký connector sau khi restaurant-service đã tạo `public.outbox_events`;
   kiểm tra cả connector/task ở trạng thái `RUNNING`.
 - Không chạy `docker compose down -v` nếu chưa được yêu cầu xóa dữ liệu.
