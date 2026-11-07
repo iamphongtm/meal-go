@@ -7,6 +7,9 @@ services:
         SERVICE_PATH: search-service
     restart: unless-stopped
     init: true
+    env_file:
+      - path: ../../search-service/.env
+        required: false
     environment:
       ELASTICSEARCH_URIS: http://elasticsearch:9200
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
