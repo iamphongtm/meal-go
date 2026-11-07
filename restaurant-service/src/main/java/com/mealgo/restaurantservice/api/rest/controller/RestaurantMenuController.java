@@ -3,6 +3,7 @@ package com.mealgo.restaurantservice.api.rest.controller;
 import com.mealgo.restaurantservice.application.port.in.menu.GetRestaurantMenuUseCase;
 import com.mealgo.restaurantservice.application.port.in.menu.MenuItemDetailResult;
 import com.mealgo.restaurantservice.application.port.in.menu.RestaurantMenuResult;
+import com.mealgo.restaurantservice.application.port.in.menu.RestaurantMenuTreeResult;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RestaurantMenuController {
     private final GetRestaurantMenuUseCase useCase;
+
+    @Operation(summary = "Get a restaurant menu tree with item option groups and per-item prices")
+    @GetMapping("/menu/tree")
+    public RestaurantMenuTreeResult getMenuTree(@PathVariable UUID restaurantId) {
+        return useCase.getMenuTree(restaurantId);
+    }
 
     @Operation(summary = "Get a restaurant's customer-facing menu",
             description = "Includes active categories and visible items. Closed restaurants remain viewable.")

@@ -2,6 +2,7 @@ package com.mealgo.restaurantservice.infrastructure.persistence.adapter;
 
 import com.mealgo.restaurantservice.application.port.in.menu.MenuItemDetailResult;
 import com.mealgo.restaurantservice.application.port.in.menu.RestaurantMenuResult;
+import com.mealgo.restaurantservice.application.port.in.menu.RestaurantMenuTreeResult;
 import com.mealgo.restaurantservice.application.port.out.RestaurantMenuQueryPort;
 import com.mealgo.restaurantservice.domain.enums.*;
 import com.mealgo.restaurantservice.infrastructure.persistence.entity.*;
@@ -22,6 +23,59 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
     private final MenuCategoryJpaRepository categories;
     private final MenuItemJpaRepository items;
     private final OptionGroupJpaRepository optionGroups;
+    private final MenuItemOptionGroupJpaRepository assignments;
+
+    @Override
+    public Optional<RestaurantMenuTreeResult> findMenuTree(UUID restaurantId) {
+        return restaurants.findById(restaurantId).map(restaurant -> {
+            boolean open = restaurant.getStatus() == RestaurantStatus.OPENING;
+            List<MenuCategoryJpaEntity> menu = categories.findCustomerMenu(restaurantId);
+            List<MenuItemOptionGroupJpaEntity> links = menu.isEmpty() ? List.of()
+                    : assignments.findCustomerAssignmentsWithPrices(restaurantId);
+            List<UUID> groupIds = links.stream().map(MenuItemOptionGroupJpaEntity::getOptionGroupId)
+                    .distinct().toList();
+            Map<UUID, OptionGroupJpaEntity> definitions = groupIds.isEmpty() ? Map.of()
+                    : optionGroups.findByRestaurantIdAndIdIn(restaurantId, groupIds).stream()
+                    .collect(Collectors.toMap(OptionGroupJpaEntity::getId, Function.identity()));
+            Map<UUID, List<MenuItemOptionGroupJpaEntity>> byItem = links.stream()
+                    .collect(Collectors.groupingBy(link -> link.getMenuItem().getId()));
+            List<RestaurantMenuTreeResult.CategoryNode> nodes = menu.stream()
+                    .map(category -> new RestaurantMenuTreeResult.CategoryNode(category.getId(), category.getName(),
+                            category.getDisplayOrder(), category.getItems().stream()
+                            .filter(item -> item.getStatus() != MenuItemStatus.INACTIVE)
+                            .map(item -> treeItem(item, open, byItem.getOrDefault(item.getId(), List.of()), definitions))
+                            .toList()))
+                    .toList();
+            return new RestaurantMenuTreeResult(new RestaurantMenuTreeResult.RestaurantSummary(
+                    restaurant.getId(), restaurant.getName(), restaurant.getAddress().getAddressLine(),
+                    open, open ? null : "RESTAURANT_CLOSED"), nodes);
+        });
+    }
+
+    private RestaurantMenuTreeResult.MenuItemNode treeItem(
+            MenuItemJpaEntity item, boolean open, List<MenuItemOptionGroupJpaEntity> links,
+            Map<UUID, OptionGroupJpaEntity> definitions) {
+        List<RestaurantMenuTreeResult.OptionGroupNode> groups = new ArrayList<>();
+        boolean configurationAvailable = true;
+        for (MenuItemOptionGroupJpaEntity link : links) {
+            OptionGroupJpaEntity definition = definitions.get(link.getOptionGroupId());
+            if (definition == null || definition.getStatus() != OptionGroupStatus.ACTIVE) {
+                if (link.getMinSelect() > 0) configurationAvailable = false;
+                continue;
+            }
+            MenuItemDetailResult.OptionGroup group = toOptionGroup(link, definition);
+            if (group.options().stream().filter(MenuItemDetailResult.Option::available).count() < group.minSelections()) {
+                configurationAvailable = false;
+            }
+            groups.add(new RestaurantMenuTreeResult.OptionGroupNode(group.optionGroupId(), group.name(),
+                    group.minSelections(), group.maxSelections(), group.displayOrder(), group.options().stream()
+                    .map(option -> new RestaurantMenuTreeResult.OptionNode(option.optionId(), option.name(),
+                            option.additionalPrice(), option.available(), option.displayOrder())).toList()));
+        }
+        return new RestaurantMenuTreeResult.MenuItemNode(item.getId(), item.getName(), item.getDescription(),
+                item.getBasePrice(), "VND", item.getImageUrl(),
+                open && item.getStatus() == MenuItemStatus.ACTIVE && configurationAvailable, List.copyOf(groups));
+    }
 
     @Override
     public Optional<RestaurantMenuResult> findMenu(UUID restaurantId) {
