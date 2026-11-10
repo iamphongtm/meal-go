@@ -27,7 +27,9 @@ class MyRestaurantControllerTest {
     void looksUpAuthenticatedOwnerAndReturnsRestaurantOr404() throws Exception {
         var useCase = mock(GetMyRestaurantUseCase.class);
         var controller = new RestaurantController(mock(RegisterRestaurantUseCase.class), useCase,
-                mock(UpdateRestaurantStatusUseCase.class));
+                mock(UpdateRestaurantStatusUseCase.class),
+                mock(com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantAddressUseCase.class),
+                mock(com.mealgo.restaurantservice.api.rest.mapper.RestaurantAddressApiMapper.class));
         var mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler(new StaticMessageSource()))

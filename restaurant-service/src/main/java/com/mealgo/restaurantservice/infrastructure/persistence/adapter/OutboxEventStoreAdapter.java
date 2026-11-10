@@ -3,6 +3,7 @@ package com.mealgo.restaurantservice.infrastructure.persistence.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mealgo.restaurantservice.application.event.AggregateType;
+import com.mealgo.restaurantservice.application.event.RestaurantAddressUpdatedEvent;
 import com.mealgo.restaurantservice.application.event.MenuItemCreatedEvent;
 import com.mealgo.restaurantservice.application.event.RestaurantCreatedEvent;
 import com.mealgo.restaurantservice.application.port.out.OutboxEventStore;
@@ -26,6 +27,17 @@ public class OutboxEventStoreAdapter implements OutboxEventStore {
     private final OutboxEventJpaRepository outboxEventRepo;
     private final ObjectMapper objectMapper;
 
+    @Override
+    public void append(RestaurantAddressUpdatedEvent event) {
+        outboxEventRepo.save(OutboxEventJpaEntity.builder()
+                .id(event.eventId())
+                .aggregateId(event.restaurantId())
+                .aggregateType(AggregateType.RESTAURANT.value())
+                .eventType(event.eventType())
+                .payload(serialize(event))
+                .createdAt(event.occurredAt())
+                .build());
+    }
 
     @Override
     public void append(MenuItemCreatedEvent event) {

@@ -101,6 +101,37 @@ public final class Restaurant extends Entity<RestaurantId> implements IAggregate
         this.pauseReason = pauseReason;
     }
 
+    public boolean updateAddress(Address newAddress, Double latitude, Double longitude) {
+        requireApproved();
+
+        if (status != RestaurantStatus.CLOSED) {
+            throw new BusinessException(RESTAURANT_ADDRESS_REQUIRES_CLOSED);
+        }
+
+        if (newAddress == null || newAddress.addressLine() == null
+                || newAddress.addressLine().isBlank() || newAddress.addressLine().length() > 255
+                || newAddress.wardCode() == null || newAddress.wardCode() <= 0
+                || latitude == null || !Double.isFinite(latitude) || latitude < -90 || latitude > 90
+                || longitude == null || !Double.isFinite(longitude) || longitude < -180 || longitude > 180) {
+            throw new BusinessException(RESTAURANT_ADDRESS_INVALID);
+        }
+
+        String addressLine = newAddress.addressLine().trim();
+        Address normalizedAddress = new Address(addressLine, newAddress.wardCode());
+
+        if (normalizedAddress.equals(address)
+                && java.util.Objects.equals(this.latitude, latitude)
+                && java.util.Objects.equals(this.longitude, longitude)) {
+            return false;
+        }
+
+        this.address = normalizedAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
+
+        return true;
+    }
+
     public void requireApproved() {
         if (approvalStatus != ApprovalStatus.APPROVED) {
             throw new BusinessException(RESTAURANT_NOT_APPROVED);

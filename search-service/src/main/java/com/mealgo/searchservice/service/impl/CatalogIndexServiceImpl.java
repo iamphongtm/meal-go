@@ -26,7 +26,7 @@ public class CatalogIndexServiceImpl implements CatalogIndexService {
     @Override
     public void handle(CatalogEventType eventType, UUID aggregateId, Instant occurredAt, JsonNode payload) {
         switch (eventType) {
-            case RESTAURANT_CREATED -> indexRestaurant(aggregateId, occurredAt, payload);
+            case RESTAURANT_CREATED, RESTAURANT_ADDRESS_UPDATED -> indexRestaurant(aggregateId, occurredAt, payload);
             case MENU_ITEM_CREATED -> indexMenuItem(aggregateId, occurredAt, payload);
             default -> throw new IllegalArgumentException("Unsupported event: " + eventType);
         }

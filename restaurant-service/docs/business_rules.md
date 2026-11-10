@@ -30,6 +30,39 @@ Chi tiết API, sự kiện và giới hạn tích hợp: [partner-applications.
 | BR-MENU-LOCATION-01 | GET `/restaurants/{id}/menu` và `/restaurants/{id}/menu/tree` trả thêm `restaurant.latitude`, `restaurant.longitude` từ tọa độ quán đã lưu, không suy ra từ địa chỉ hoặc vị trí khách. Giá trị thiếu giữ nguyên `null`, không thay bằng 0 hoặc vị trí mặc định. | Đã có code: RestaurantMenuQueryAdapter, RestaurantMenuResult, RestaurantMenuTreeResult |
 | BR-MENU-LOCATION-02 | Bổ sung tọa độ không thay đổi điều kiện công bố: chỉ quán APPROVED có menu công khai; quán đã duyệt nhưng đóng cửa vẫn xem được với `acceptingOrders=false`. | Đã có code; giữ nguyên BR-PARTNER-05 |
 
+## Cập nhật địa chỉ nhà hàng
+
+| ID | Quy tắc | Trạng thái / nơi thực thi |
+|---|---|---|
+| BR-RESTAURANT-ADDRESS-01 | Chỉ RESTAURANT là chủ quán được cập nhật; không tồn tại hoặc sai chủ trả 404. Quán phải APPROVED và CLOSED; chưa đóng trả 409, chưa duyệt dùng lỗi not-approved 403. Giữ nguyên duyệt và trạng thái, không tự mở bán. | Đã có code: RestaurantController, UpdateRestaurantAddressUseCaseImpl, Restaurant.updateAddress |
+| BR-RESTAURANT-ADDRESS-02 | Bắt buộc provinceCode/wardCode nguyên dương, ward tồn tại thuộc tỉnh, addressLine không trắng tối đa 255 ký tự, trim khi lưu; latitude/longitude hữu hạn trong [-90,90]/[-180,180]. Cập nhật cả nhóm, không geocode hay xác minh ranh giới. | Đã có code; không kiểm tra đơn đang xử lý, không sửa địa chỉ đơn cũ |
+| BR-RESTAURANT-ADDRESS-03 | Tải aggregate có khóa; cập nhật và outbox RestaurantAddressUpdated cùng transaction. Không đổi dữ liệu thì trả 200 không phát event. Snapshot mang name/status/addressLine/wardCode/latitude/longitude; Search xử lý bất đồng bộ, xem docs/business_rules.md của search-service. | Đã có code; cần hạ tầng outbox/CDC/Kafka đang hoạt động để đồng bộ thực tế |
+| BR-RESTAURANT-ADDRESS-04 | Merchant đọc hồ sơ/menu từ API thật; chỉ bật sửa địa chỉ khi quán CLOSED và APPROVED. Form dùng tìm kiếm Place VietMap, ánh xạ tên hành chính khi khớp duy nhất, cho chọn danh mục thủ công và yêu cầu xác nhận địa chỉ. PATCH đủ năm trường; giữ dữ liệu khi lỗi, cập nhật trang bằng response khi thành công. Không hiển thị số liệu đánh giá/lịch hoạt động/bản đồ giả. | Đã có code: RestaurantPage, RestaurantAddressDialog, partnerApi; browser kiểm thử bằng fixture |
+
 ## Lịch sử cập nhật
 
-- 2026-11-11: Import partner application review, resubmission, approval guards and menu coordinates from the team snapshot. Frontend behavior above is reference only; frontend and Auth are not included in this repository update.
+- 2026-11-11: Import backend Restaurant từ snapshot repo nhóm. Các mục Merchant/Admin phía trên là tài liệu tham chiếu, không có frontend hoặc Auth trong đợt đồng bộ này. Search chưa nhận event riêng khi quán đổi trạng thái mở/đóng; cần xử lý trước khi coi trạng thái index là thời gian thực.
+
+- 2026-11-11: Cập nhật layout trang Nhà hàng Merchant, bỏ dữ liệu mock của trang, nối API cập nhật địa chỉ và toast; hỗ trợ khung mobile và điều hướng thu gọn. Kiểm thử browser fixture ở 360/768/1280; chưa kiểm thử PATCH vào DB thật.
+
+- 2026-11-11: Thêm PATCH /restaurants/{restaurantId}/address: chủ quán APPROVED và CLOSED cập nhật trọn bộ địa chỉ/tọa độ; giữ duyệt và trạng thái vận hành, không sửa đơn cũ. Lưu aggregate và RestaurantAddressUpdated trong cùng transaction; Search đồng bộ bất đồng bộ.
+
+- 2026-11-11: Merchant đối chiếu boundary tỉnh type=0 và phường/xã type=2 của Place/Autocomplete v4 với tên danh mục nội bộ, chuẩn hóa dấu/tiền tố hành chính. Chỉ tự điền mã hệ thống khi khớp duy nhất, tải phường theo tỉnh đã khớp; thiếu/không khớp/lỗi giữ chọn thủ công, không dùng ID VietMap làm mã nội bộ. Giữ trường tỉnh/phường để kiểm tra và sửa.
+
+- 2026-11-11: Thay bản đồ trong form đăng ký bằng tìm địa chỉ Autocomplete v4 và lấy tọa độ Place v4; giữ danh mục tỉnh/phường backend và payload đăng ký hiện có. Dùng VIETMAP_SEARCH_API_KEY server-side cho Vite dev proxy, chưa tích hợp production proxy.
+
+- 2026-11-11: Merchant dev proxy /vietmap đến https://maps.vietmap.vn; MapLibre chuyển tài nguyên style/source/tile/glyph/sprite cùng host qua proxy để tránh CORS local. Không tắt bảo mật trình duyệt; production vẫn cần VietMap cho phép origin hoặc reverse proxy tương ứng (Vite dev proxy không áp dụng production).
+
+- 2026-11-11: Merchant bỏ tiền tố /backend, cấu hình VITE_API_BASE_URL=/ và BACKEND_URL trong .env; Vite proxy trực tiếp /auth-service và /restaurant-service đến API Gateway (mặc định http://localhost:8765), giữ nguyên đường dẫn. Không thay đổi endpoint hoặc quyền backend; proxy chỉ phục vụ dev, production cần reverse proxy tương ứng hoặc API base URL phù hợp.
+
+- 2026-11-11: Frontend Merchant hỗ trợ chọn/kéo ghim trên nền bản đồ VietMap (MapLibre), cấu hình public web key VITE_VIETMAP_MAP_API_KEY. GPS chỉ được yêu cầu khi bấm nút; không tự ghi đè địa chỉ theo tọa độ. Yêu cầu xác nhận ghim trước khi gửi; thay đổi địa chỉ hành chính, số nhà/tên đường hoặc tọa độ hủy xác nhận cũ. Giữ nguyên API và payload đăng ký; chưa geocode/reverse-geocode hoặc kiểm tra địa giới tự động.
+
+- 2026-11-10: Cập nhật Merchant đăng nhập CUSTOMER/RESTAURANT, điều hướng theo quyền và hồ sơ hiện có, hiển thị trạng thái xét duyệt và gửi lại hồ sơ bị từ chối. Không thay đổi quyền backend hoặc tự cấp role từ frontend.
+
+- 2026-11-10: Frontend Admin gọi duyệt hồ sơ rồi gọi auth-service cấp quyền bằng ownerId; hai bước không nguyên tử. Có thử cấp quyền lại và bộ lọc APPROVED để phục hồi sau reload. RestaurantApproved vẫn được lưu nhưng chưa có consumer; không triển khai thêm luồng cấp quyền tự động trong mốc này.
+
+- 2026-11-10: Bổ sung latitude/longitude vào thông tin nhà hàng của hai API menu công khai để trang chi tiết khách hàng có thể đọc tọa độ quán; không thay đổi dữ liệu hay quyền truy cập.
+
+- 2026-11-10: Thêm frontend/mealgo-admin dùng API thật: đăng nhập ADMIN, danh sách PENDING, duyệt trực tiếp và từ chối có lý do; không có màn hình chi tiết. Thông báo thành công chỉ xác nhận hồ sơ đã được xử lý, không khẳng định quyền tài khoản đã được cấp.
+
+- 2026-11-10: Triển khai hồ sơ, xét duyệt admin, gửi lại, chặn quản lý/mở bán trước duyệt và ghi outbox. Chưa sửa auth-service/frontend, chưa xác nhận migration runtime. Chuyển các quy tắc BR-PARTNER-* đã ghi nhầm trong tài liệu delivery-service về đúng service.

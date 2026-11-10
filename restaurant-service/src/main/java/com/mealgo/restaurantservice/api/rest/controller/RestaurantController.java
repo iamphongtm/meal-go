@@ -1,5 +1,11 @@
 package com.mealgo.restaurantservice.api.rest.controller;
 
+import com.mealgo.restaurantservice.api.rest.dto.request.UpdateRestaurantAddressRequest;
+import com.mealgo.restaurantservice.api.rest.dto.response.RestaurantAddressResponse;
+import com.mealgo.restaurantservice.api.rest.mapper.RestaurantAddressApiMapper;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantAddressCommand;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantAddressUseCase;
+import com.mealgo.restaurantservice.application.port.in.restaurant.RestaurantAddressResult;
 
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantUseCase;
 import com.mealgo.restaurantservice.application.port.in.restaurant.GetMyRestaurantUseCase;
@@ -48,6 +54,28 @@ public class RestaurantController {
     RegisterRestaurantUseCase registerRestaurantUseCase;
     GetMyRestaurantUseCase getMyRestaurantUseCase;
     UpdateRestaurantStatusUseCase updateRestaurantStatusUseCase;
+    UpdateRestaurantAddressUseCase updateRestaurantAddressUseCase;
+    RestaurantAddressApiMapper restaurantAddressApiMapper;
+
+    @PatchMapping("/{restaurantId}/address")
+    @PreAuthorize("hasRole('RESTAURANT')")
+    @Operation(summary = "Update the address of an approved, closed restaurant")
+    public ResponseEntity<RestaurantAddressResponse> updateAddress(
+            @PathVariable UUID restaurantId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody UpdateRestaurantAddressRequest request
+    ) {
+        UpdateRestaurantAddressCommand command = restaurantAddressApiMapper.toCommand(
+                restaurantId,
+                user.userId(),
+                request
+        );
+
+        RestaurantAddressResult result = updateRestaurantAddressUseCase.updateAddress(command);
+        RestaurantAddressResponse response = restaurantAddressApiMapper.toResponse(result);
+
+        return ResponseEntity.ok(response);
+    }
 
     @PatchMapping("/{restaurantId}/status")
     @PreAuthorize("hasRole('RESTAURANT')")
