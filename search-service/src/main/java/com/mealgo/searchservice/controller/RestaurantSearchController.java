@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/search/restaurants")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class RestaurantSearchController {
     private final RestaurantSearchService searchRestaurants;
 
     @Operation(summary = "Find nearby restaurants", description = "Straight-line surface distance in kilometers, nearest first.")
-    @GetMapping("/nearby")
+    @GetMapping("/public/restaurants/nearby")
     public RestaurantSearchPage nearby(
             @RequestParam(name = "latitude") double latitude,
             @RequestParam(name = "longitude") double longitude,
@@ -27,7 +27,7 @@ public class RestaurantSearchController {
     }
 
     @Operation(summary = "Find restaurants by dish name", description = "Each restaurant includes up to five best-matching menu items.")
-    @GetMapping("/by-dish")
+    @GetMapping("/search/restaurants/by-dish")
     public RestaurantSearchPage byDish(
             @RequestParam(name = "keyword") String keyword,
             @RequestParam(name = "page", defaultValue = "0") int page,

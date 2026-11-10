@@ -13,4 +13,6 @@ Giới hạn tích hợp: cập nhật trạng thái mở/đóng hiện chưa ph
 
 ## Lịch sử cập nhật
 
+- 2026-11-11: BR-SEARCH-PUBLIC-01 — Reverse location và nearby dùng GET `/api/public/locations/reverse` và `/api/public/restaurants/nearby`; không giữ alias cũ. By-dish giữ `/api/search/restaurants/by-dish`. Đã có code controller; gateway/frontend không thuộc snapshot cá nhân này, cần cập nhật client/proxy tương ứng.
+
 - 2026-11-11: Bổ sung nhận RestaurantAddressUpdated, tái sử dụng upsert snapshot nhà hàng và bảo toàn menu.

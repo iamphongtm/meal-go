@@ -1,7 +1,10 @@
 # VietMap configuration
 
 Reverse geocoding is available at
-`GET /api/search/locations/reverse?latitude=10.759221&longitude=106.675901`.
+`GET /api/public/locations/reverse?latitude=10.759221&longitude=106.675901`.
+
+The previous `/api/search/locations/reverse` route is not retained as an alias.
+Update direct clients and reverse proxies; gateway permission changes are separate.
 The controller calls `LocationService`, which validates coordinates and calls
 `VietMapClient`. The client uses VietMap Reverse v4 with `display_type=1`.
 Setting configuration alone does not verify the key or its permissions.

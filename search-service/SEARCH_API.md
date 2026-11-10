@@ -3,7 +3,7 @@
 ## Nearby restaurants
 
 ```http
-GET /api/search/restaurants/nearby?latitude=10.7769&longitude=106.7009&radiusKm=5&page=0&size=10
+GET /api/public/restaurants/nearby?latitude=10.7769&longitude=106.7009&radiusKm=5&page=0&size=10
 ```
 
 - `latitude` and `longitude` are required.
@@ -27,6 +27,9 @@ GET /api/search/restaurants/by-dish?keyword=phở&page=0&size=10
 - `distanceKm` is null because this endpoint does not require coordinates.
 
 ## Common behavior
+
+- Nearby discovery moved from `/api/search/restaurants/nearby` to `/api/public/restaurants/nearby`; the old route is not an alias. Update direct clients/reverse proxies. Dish search keeps its existing route.
+- Public naming does not itself configure gateway authentication; gateway changes from the team repository are not included here.
 
 - Response fields: `content`, `page`, `size`, `totalElements`, `totalPages`.
 - Pagination is by restaurant, not by menu item. Page starts at 0; size defaults to 10 (1–100).
