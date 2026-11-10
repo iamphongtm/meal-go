@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('RESTAURANT')")
 @Tag(name = "Menu Categories", description = "APIs for managing restaurant menu categories")
 @RequiredArgsConstructor
 public class MenuCategoryController {

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('RESTAURANT')")
 @RequiredArgsConstructor
 @RequestMapping("/restaurants/{restaurantId}/option-groups")
 @Tag(name = "Option Groups", description = "Shared option groups owned by a restaurant")

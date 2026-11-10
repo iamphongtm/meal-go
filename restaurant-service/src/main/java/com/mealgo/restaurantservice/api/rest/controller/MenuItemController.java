@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.List;
 
 @RestController
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('RESTAURANT')")
 @RequiredArgsConstructor
 @RequestMapping("/restaurants/{restaurantId}/menu-items")
 @Tag(name = "Menu Items", description = "Restaurant menu items")

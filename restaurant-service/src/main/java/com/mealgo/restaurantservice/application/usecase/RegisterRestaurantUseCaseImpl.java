@@ -1,9 +1,7 @@
 package com.mealgo.restaurantservice.application.usecase;
 
-import com.mealgo.restaurantservice.application.event.RestaurantCreatedEvent;
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantCommand;
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantUseCase;
-import com.mealgo.restaurantservice.application.port.out.OutboxEventStore;
 import com.mealgo.restaurantservice.application.port.out.RestaurantRepository;
 import com.mealgo.restaurantservice.application.port.out.WardRepository;
 import com.mealgo.restaurantservice.domain.enums.RestaurantStatus;
@@ -17,10 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.UUID;
 
-import static com.mealgo.restaurantservice.application.event.EventType.RESTAURANT_CREATED;
 import static com.mealgo.restaurantservice.domain.shared.ErrorCode.*;
 
 @Service
@@ -29,7 +24,6 @@ import static com.mealgo.restaurantservice.domain.shared.ErrorCode.*;
 public class RegisterRestaurantUseCaseImpl implements RegisterRestaurantUseCase {
     private final RestaurantRepository restaurantRepository;
     private final WardRepository wardRepository;
-    private final OutboxEventStore outboxEventStore;
 
     @Override
     @Transactional
@@ -54,18 +48,7 @@ public class RegisterRestaurantUseCaseImpl implements RegisterRestaurantUseCase 
 
         restaurantRepository.save(restaurant);
 
-        outboxEventStore.append(RestaurantCreatedEvent.builder()
-                .eventId(UUID.randomUUID())
-                .eventType(RESTAURANT_CREATED.value())
-                .occurredAt(Instant.now())
-                .restaurantId(restaurant.getId().value())
-                .name(restaurant.getName())
-                .status(restaurant.getStatus().name())
-                .addressLine(restaurant.getAddress().addressLine())
-                .wardCode(restaurant.getAddress().wardCode())
-                .latitude(restaurant.getLatitude())
-                .longitude(restaurant.getLongitude())
-                .build());
+        // Customer-facing publication is deferred until admin approval.
 
         return restaurant.getId();
     }

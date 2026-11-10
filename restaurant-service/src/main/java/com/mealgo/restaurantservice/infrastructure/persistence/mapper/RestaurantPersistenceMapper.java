@@ -1,54 +1,34 @@
 package com.mealgo.restaurantservice.infrastructure.persistence.mapper;
 
+import com.mealgo.restaurantservice.domain.model.restaurant.*;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.*;
+import org.mapstruct.*;
 
-import com.mealgo.restaurantservice.domain.model.restaurant.Address;
-import com.mealgo.restaurantservice.domain.model.restaurant.Restaurant;
-import com.mealgo.restaurantservice.domain.model.restaurant.RestaurantId;
-import com.mealgo.restaurantservice.infrastructure.persistence.entity.AddressEmbeddable;
-import com.mealgo.restaurantservice.infrastructure.persistence.entity.RestaurantJpaEntity;
-import com.mealgo.restaurantservice.infrastructure.persistence.entity.WardJpaEntity;
-
-public final class RestaurantPersistenceMapper {
-    private RestaurantPersistenceMapper() {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface RestaurantPersistenceMapper {
+    default Restaurant toDomain(RestaurantJpaEntity entity) {
+        return new Restaurant(RestaurantId.of(entity.getId()), entity.getOwnerId(), entity.getName(),
+                entity.getPhone(), entity.getStatus(),
+                new Address(entity.getAddress().getAddressLine(), entity.getAddress().getWard().getCode()),
+                entity.getLatitude(), entity.getLongitude(), entity.getApprovalStatus(), entity.getSubmittedAt(),
+                entity.getReviewedBy(), entity.getReviewedAt(), entity.getRejectionReason(), entity.getPauseReason());
     }
 
-    public static Restaurant toDomain(RestaurantJpaEntity entity) {
-        var address = entity.getAddress();
+    @Mapping(target = "id", expression = "java(restaurant.getId().value())")
+    @Mapping(target = "address", ignore = true)
+    RestaurantJpaEntity toEntity(Restaurant restaurant, @Context WardJpaEntity ward);
 
-        return new Restaurant(
-                RestaurantId.of(entity.getId()),
-                entity.getOwnerId(),
-                entity.getName(),
-                entity.getPhone(),
-                entity.getStatus(),
-                new Address(
-                        address.getAddressLine(),
-                        address.getWard().getCode()
-                ),
-                entity.getLatitude(),
-                entity.getLongitude()
-        );
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "ownerId", ignore = true)
+    @Mapping(target = "address", ignore = true)
+    void updateState(Restaurant restaurant, @MappingTarget RestaurantJpaEntity entity, @Context WardJpaEntity ward);
 
-    public static RestaurantJpaEntity toNewEntity(
-            Restaurant restaurant,
-            WardJpaEntity wardReference
-    ) {
-        var address = new AddressEmbeddable();
+    @AfterMapping
+    default void address(Restaurant restaurant, @MappingTarget RestaurantJpaEntity entity,
+                         @Context WardJpaEntity ward) {
+        AddressEmbeddable address = new AddressEmbeddable();
         address.setAddressLine(restaurant.getAddress().addressLine());
-        address.setWard(wardReference);
-
-        var entity = new RestaurantJpaEntity();
-        entity.setId(restaurant.getId().value());
-        entity.setOwnerId(restaurant.getOwnerId());
-        entity.setName(restaurant.getName());
-        entity.setPhone(restaurant.getPhone());
-        entity.setStatus(restaurant.getStatus());
+        address.setWard(ward);
         entity.setAddress(address);
-        entity.setLatitude(restaurant.getLatitude());
-        entity.setLongitude(restaurant.getLongitude());
-
-        return entity;
     }
-
 }

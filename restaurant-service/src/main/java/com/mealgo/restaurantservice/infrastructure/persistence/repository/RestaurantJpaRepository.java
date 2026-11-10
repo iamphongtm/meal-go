@@ -13,6 +13,13 @@ import java.util.UUID;
 
 public interface RestaurantJpaRepository extends JpaRepository<RestaurantJpaEntity, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from RestaurantJpaEntity r where r.id = :id")
+    Optional<RestaurantJpaEntity> findByIdForUpdate(@Param("id") UUID id);
+
+    org.springframework.data.domain.Page<RestaurantJpaEntity> findByApprovalStatus(
+            com.mealgo.restaurantservice.domain.enums.ApprovalStatus status,
+            org.springframework.data.domain.Pageable pageable);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RestaurantJpaEntity> findByIdAndOwnerId(UUID id, UUID ownerId);
     Optional<RestaurantJpaEntity> findByOwnerId(UUID ownerId);
 

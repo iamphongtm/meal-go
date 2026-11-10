@@ -30,9 +30,6 @@ public class HeaderRequestFilter extends OncePerRequestFilter {
         String userId = request.getHeader(Constants.HEADER_ACCOUNT_ID);
         String email = request.getHeader(Constants.HEADER_USER_EMAIL);
         String roles = request.getHeader(Constants.HEADER_USER_ROLES);
-        log.info("Id: {}", userId);
-        log.info("email: {}",email);
-        log.info("roles: {}", roles);
         if (userId != null && roles != null) {
 
             AuthenticatedUser principal = new AuthenticatedUser(
@@ -49,7 +46,6 @@ public class HeaderRequestFilter extends OncePerRequestFilter {
                             ))
                             .map(role -> (GrantedAuthority) role )
                             .toList();
-        log.info("sizes: {} - roles: {}", authorities.size(), authorities.toString());
             Authentication authentication =
                     new UsernamePasswordAuthenticationToken(
                             principal,

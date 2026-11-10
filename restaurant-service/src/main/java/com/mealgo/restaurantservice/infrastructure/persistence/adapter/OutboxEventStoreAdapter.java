@@ -16,8 +16,16 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class OutboxEventStoreAdapter implements OutboxEventStore {
+    @Override
+    public void append(com.mealgo.restaurantservice.application.event.RestaurantApprovedEvent event) {
+        outboxEventRepo.save(OutboxEventJpaEntity.builder()
+                .id(event.eventId()).aggregateId(event.restaurantId())
+                .aggregateType(AggregateType.RESTAURANT.value()).eventType(event.eventType())
+                .payload(serialize(event)).createdAt(event.occurredAt()).build());
+    }
     private final OutboxEventJpaRepository outboxEventRepo;
     private final ObjectMapper objectMapper;
+
 
     @Override
     public void append(MenuItemCreatedEvent event) {

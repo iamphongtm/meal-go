@@ -27,16 +27,17 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
 
     @Override
     public Optional<RestaurantMenuTreeResult> findMenuTree(UUID restaurantId) {
-        return restaurants.findById(restaurantId).map(restaurant -> {
+        return restaurants.findById(restaurantId)
+                .filter(restaurant -> restaurant.getApprovalStatus() == ApprovalStatus.APPROVED).map(restaurant -> {
             boolean open = restaurant.getStatus() == RestaurantStatus.OPENING;
             List<MenuCategoryJpaEntity> menu = categories.findCustomerMenu(restaurantId);
-            List<MenuItemOptionGroupJpaEntity> links = menu.isEmpty() ? List.of()
-                    : assignments.findCustomerAssignmentsWithPrices(restaurantId);
+            List<MenuItemOptionGroupJpaEntity> links = List.of();
+            if (!menu.isEmpty()) {
+                links = assignments.findCustomerAssignmentsWithPrices(restaurantId);
+            }
             List<UUID> groupIds = links.stream().map(MenuItemOptionGroupJpaEntity::getOptionGroupId)
                     .distinct().toList();
-            Map<UUID, OptionGroupJpaEntity> definitions = groupIds.isEmpty() ? Map.of()
-                    : optionGroups.findByRestaurantIdAndIdIn(restaurantId, groupIds).stream()
-                    .collect(Collectors.toMap(OptionGroupJpaEntity::getId, Function.identity()));
+            Map<UUID, OptionGroupJpaEntity> definitions = findDefinitions(restaurantId, groupIds);
             Map<UUID, List<MenuItemOptionGroupJpaEntity>> byItem = links.stream()
                     .collect(Collectors.groupingBy(link -> link.getMenuItem().getId()));
             List<RestaurantMenuTreeResult.CategoryNode> nodes = menu.stream()
@@ -48,6 +49,7 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
                     .toList();
             return new RestaurantMenuTreeResult(new RestaurantMenuTreeResult.RestaurantSummary(
                     restaurant.getId(), restaurant.getName(), restaurant.getAddress().getAddressLine(),
+                    restaurant.getLatitude(), restaurant.getLongitude(),
                     open, open ? null : "RESTAURANT_CLOSED"), nodes);
         });
     }
@@ -79,13 +81,15 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
 
     @Override
     public Optional<RestaurantMenuResult> findMenu(UUID restaurantId) {
-        return restaurants.findById(restaurantId).map(restaurant -> {
+        return restaurants.findById(restaurantId)
+                .filter(restaurant -> restaurant.getApprovalStatus() == ApprovalStatus.APPROVED).map(restaurant -> {
             boolean open = restaurant.getStatus() == RestaurantStatus.OPENING;
-            var summary = new RestaurantMenuResult.RestaurantSummary(
+            RestaurantMenuResult.RestaurantSummary summary = new RestaurantMenuResult.RestaurantSummary(
                     restaurant.getId(), restaurant.getName(), restaurant.getAddress().getAddressLine(),
+                    restaurant.getLatitude(), restaurant.getLongitude(),
                     open, open ? null : "RESTAURANT_CLOSED");
-            var itemsWithOptions = new HashSet<>(items.findItemIdsWithActiveOptions(restaurantId));
-            var menu = categories.findCustomerMenu(restaurantId).stream()
+            Set<UUID> itemsWithOptions = new HashSet<>(items.findItemIdsWithActiveOptions(restaurantId));
+            List<RestaurantMenuResult.Category> menu = categories.findCustomerMenu(restaurantId).stream()
                     .map(category -> new RestaurantMenuResult.Category(
                             category.getId(), category.getName(), category.getDisplayOrder(),
                             category.getItems().stream()
@@ -103,17 +107,16 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
 
     @Override
     public Optional<MenuItemDetailResult> findMenuItem(UUID restaurantId, UUID menuItemId) {
-        return items.findCustomerItem(restaurantId, menuItemId).map(item -> {
-            var groupIds = item.getOptionGroups().stream()
+        return items.findCustomerItem(restaurantId, menuItemId)
+                .filter(item -> item.getCategory().getRestaurant().getApprovalStatus() == ApprovalStatus.APPROVED).map(item -> {
+            List<UUID> groupIds = item.getOptionGroups().stream()
                     .map(MenuItemOptionGroupJpaEntity::getOptionGroupId).toList();
-            Map<UUID, OptionGroupJpaEntity> definitions = groupIds.isEmpty() ? Map.of()
-                    : optionGroups.findByRestaurantIdAndIdIn(restaurantId, groupIds).stream()
-                    .collect(Collectors.toMap(OptionGroupJpaEntity::getId, Function.identity()));
+            Map<UUID, OptionGroupJpaEntity> definitions = findDefinitions(restaurantId, groupIds);
 
-            var groups = new ArrayList<MenuItemDetailResult.OptionGroup>();
+            List<MenuItemDetailResult.OptionGroup> groups = new ArrayList<>();
             boolean configurationAvailable = true;
-            for (var assignment : item.getOptionGroups()) {
-                var definition = definitions.get(assignment.getOptionGroupId());
+            for (MenuItemOptionGroupJpaEntity assignment : item.getOptionGroups()) {
+                OptionGroupJpaEntity definition = definitions.get(assignment.getOptionGroupId());
                 if (definition == null || definition.getStatus() != OptionGroupStatus.ACTIVE) {
                     // A required group cannot silently disappear and make a dish orderable.
                     if (assignment.getMinSelect() > 0) {
@@ -121,7 +124,7 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
                     }
                     continue;
                 }
-                var group = toOptionGroup(assignment, definition);
+                MenuItemDetailResult.OptionGroup group = toOptionGroup(assignment, definition);
                 long availableCount = group.options().stream()
                         .filter(MenuItemDetailResult.Option::available).count();
                 if (availableCount < group.minSelections()) {
@@ -141,10 +144,10 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
 
     private MenuItemDetailResult.OptionGroup toOptionGroup(
             MenuItemOptionGroupJpaEntity assignment, OptionGroupJpaEntity definition) {
-        var prices = assignment.getOptionPrices().stream()
+        Map<UUID, java.math.BigDecimal> prices = assignment.getOptionPrices().stream()
                 .collect(Collectors.toMap(MenuItemOptionPriceJpaEntity::getOptionId,
                         MenuItemOptionPriceJpaEntity::getAdditionalPrice));
-        var options = definition.getOptions().stream()
+        List<MenuItemDetailResult.Option> options = definition.getOptions().stream()
                 .filter(option -> option.getStatus() != OptionStatus.INACTIVE)
                 // Only options explicitly configured for this dish have a price.
                 .filter(option -> prices.containsKey(option.getId()))
@@ -155,5 +158,13 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
         return new MenuItemDetailResult.OptionGroup(definition.getId(), definition.getName(),
                 assignment.getMinSelect(), assignment.getMaxSelect(),
                 assignment.getDisplayOrder(), options);
+    }
+
+    private Map<UUID, OptionGroupJpaEntity> findDefinitions(UUID restaurantId, List<UUID> groupIds) {
+        if (groupIds.isEmpty()) {
+            return Map.of();
+        }
+        return optionGroups.findByRestaurantIdAndIdIn(restaurantId, groupIds).stream()
+                .collect(Collectors.toMap(OptionGroupJpaEntity::getId, Function.identity()));
     }
 }

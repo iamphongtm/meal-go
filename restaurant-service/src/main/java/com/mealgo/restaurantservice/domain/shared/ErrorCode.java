@@ -1,6 +1,10 @@
 package com.mealgo.restaurantservice.domain.shared;
 
 public enum ErrorCode {
+    RESTAURANT_NOT_APPROVED("restaurant.not-approved"),
+    RESTAURANT_REVIEW_CONFLICT("restaurant.review-conflict"),
+    RESTAURANT_REVIEW_INVALID("restaurant.review-invalid"),
+    RESTAURANT_REJECTION_REASON_INVALID("restaurant.rejection-reason-invalid"),
     RESTAURANT_STATUS_INVALID("restaurant.status-invalid"),
     RESTAURANT_PAUSE_REASON_INVALID("restaurant.pause-reason-invalid"),
     RESTAURANT_NOT_FOUND("restaurant.not-found"),

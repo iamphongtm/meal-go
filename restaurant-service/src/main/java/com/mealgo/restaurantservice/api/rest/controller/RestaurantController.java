@@ -1,5 +1,6 @@
 package com.mealgo.restaurantservice.api.rest.controller;
 
+
 import com.mealgo.restaurantservice.application.port.in.restaurant.RegisterRestaurantUseCase;
 import com.mealgo.restaurantservice.application.port.in.restaurant.GetMyRestaurantUseCase;
 import com.mealgo.restaurantservice.application.port.in.restaurant.MyRestaurantResult;
@@ -15,6 +16,7 @@ import com.mealgo.restaurantservice.api.rest.dto.request.RegisterRestaurantReque
 import com.mealgo.restaurantservice.api.rest.dto.response.RegisterRestaurantResponse;
 import com.mealgo.restaurantservice.infrastructure.config.AuthenticatedUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -48,6 +50,7 @@ public class RestaurantController {
     UpdateRestaurantStatusUseCase updateRestaurantStatusUseCase;
 
     @PatchMapping("/{restaurantId}/status")
+    @PreAuthorize("hasRole('RESTAURANT')")
     @Operation(summary = "Update restaurant order acceptance status")
     public RestaurantStatusResult updateStatus(
             @PathVariable UUID restaurantId,
@@ -70,6 +73,7 @@ public class RestaurantController {
                             schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'RESTAURANT')")
     public MyRestaurantResult getMyRestaurant(
             @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user
     ) {
@@ -109,15 +113,16 @@ public class RestaurantController {
             )
     })
     @PostMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'RESTAURANT')")
     public ResponseEntity<RegisterRestaurantResponse> registerRestaurant(
             @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody RegisterRestaurantRequest request
     ) {
-        var command = new RegisterRestaurantCommand(
+        RegisterRestaurantCommand command = new RegisterRestaurantCommand(
                 user.userId(), request.name(), request.phone(), request.provinceCode(),
                 request.wardCode(), request.addressLine(), request.latitude(), request.longitude()
         );
-        var restaurantId = registerRestaurantUseCase.registerRestaurant(command);
+        com.mealgo.restaurantservice.domain.model.restaurant.RestaurantId restaurantId = registerRestaurantUseCase.registerRestaurant(command);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RegisterRestaurantResponse(restaurantId.value()));

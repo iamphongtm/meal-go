@@ -5,6 +5,8 @@ import com.mealgo.restaurantservice.domain.model.restaurant.Restaurant;
 import com.mealgo.restaurantservice.domain.enums.RestaurantStatus;
 import org.springframework.transaction.annotation.Transactional;
 import com.mealgo.restaurantservice.infrastructure.persistence.mapper.RestaurantPersistenceMapper;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.RestaurantJpaEntity;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.WardJpaEntity;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.WardJpaRepository;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.RestaurantJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,23 +18,31 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class RestaurantAdapter implements RestaurantRepository {
-    @Override
-    @Transactional
-    public boolean updateStatus(UUID id, UUID ownerId, RestaurantStatus status, String pauseReason) {
-        return restaurantJpaRepository.findByIdAndOwnerId(id, ownerId).map(entity -> {
-            entity.setStatus(status);
-            entity.setPauseReason(pauseReason);
-            return true;
-        }).orElse(false);
-    }
     private final RestaurantJpaRepository restaurantJpaRepository;
     private final WardJpaRepository wardJpaRepository;
+    private final RestaurantPersistenceMapper mapper;
+
+    @Override
+    public Optional<Restaurant> findByIdForUpdate(UUID id) {
+        return restaurantJpaRepository.findByIdForUpdate(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<Restaurant> findById(UUID id) {
+        return restaurantJpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public void updateState(Restaurant restaurant) {
+        RestaurantJpaEntity entity = restaurantJpaRepository.findById(restaurant.getId().value()).orElseThrow();
+        mapper.updateState(restaurant, entity, wardJpaRepository.getReferenceById(restaurant.getAddress().wardCode()));
+    }
 
     @Override
     public void save(Restaurant restaurant) {
-        var wardReference = wardJpaRepository.getReferenceById(restaurant.getAddress().wardCode());
+        WardJpaEntity wardReference = wardJpaRepository.getReferenceById(restaurant.getAddress().wardCode());
 
-        var entity = RestaurantPersistenceMapper.toNewEntity(restaurant, wardReference);
+        RestaurantJpaEntity entity = mapper.toEntity(restaurant, wardReference);
 
         restaurantJpaRepository.save(entity);
     }
@@ -44,11 +54,17 @@ public class RestaurantAdapter implements RestaurantRepository {
 
     @Override
     public boolean existsByIdAndOwnerId(UUID id, UUID restaurantId) {
-        return restaurantJpaRepository.existsByIdAndOwnerId(id, restaurantId);
+        return findById(id).filter(value -> value.getOwnerId().equals(restaurantId)).map(value -> {
+            value.requireApproved();
+            return true;
+        }).orElse(false);
     }
 
     @Override
     public Optional<String> findNameByIdAndOwnerId(UUID id, UUID ownerId) {
-        return restaurantJpaRepository.findNameByIdAndOwnerId(id, ownerId);
+        return findById(id).filter(value -> value.getOwnerId().equals(ownerId)).map(value -> {
+            value.requireApproved();
+            return value.getName();
+        });
     }
 }

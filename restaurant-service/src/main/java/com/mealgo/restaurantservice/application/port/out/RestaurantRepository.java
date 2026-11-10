@@ -7,7 +7,9 @@ import java.util.UUID;
 import java.util.Optional;
 
 public interface RestaurantRepository {
-    boolean updateStatus(UUID id, UUID ownerId, RestaurantStatus status, String pauseReason);
+    Optional<Restaurant> findByIdForUpdate(UUID id);
+    Optional<Restaurant> findById(UUID id);
+    void updateState(Restaurant restaurant);
     void save(Restaurant restaurant);
 
     boolean existByOwnerId(UUID ownerId);

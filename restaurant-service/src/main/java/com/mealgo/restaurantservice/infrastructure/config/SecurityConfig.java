@@ -32,7 +32,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/restaurants/*/menu",
                                 "/restaurants/*/menu/tree",
-                                "/restaurants/*/menu-items/*").permitAll()
+                                 "/restaurants/*/menu-items/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
