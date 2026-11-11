@@ -11,7 +11,8 @@ public interface RestaurantPersistenceMapper {
                 entity.getPhone(), entity.getStatus(),
                 new Address(entity.getAddress().getAddressLine(), entity.getAddress().getWard().getCode()),
                 entity.getLatitude(), entity.getLongitude(), entity.getApprovalStatus(), entity.getSubmittedAt(),
-                entity.getReviewedBy(), entity.getReviewedAt(), entity.getRejectionReason(), entity.getPauseReason());
+                entity.getReviewedBy(), entity.getReviewedAt(), entity.getRejectionReason(), entity.getPauseReason(),
+                entity.getAvatarUrl());
     }
 
     @Mapping(target = "id", expression = "java(restaurant.getId().value())")

@@ -12,6 +12,8 @@ import com.mealgo.restaurantservice.domain.model.menuitem.MenuItem;
 import com.mealgo.restaurantservice.domain.model.menuitem.MenuItemId;
 import com.mealgo.restaurantservice.domain.model.menuitem.MenuItemOptionGroup;
 import com.mealgo.restaurantservice.domain.model.menuitem.MenuItemOptionPrice;
+import com.mealgo.restaurantservice.domain.model.optiongroup.Option;
+import com.mealgo.restaurantservice.domain.model.optiongroup.OptionGroup;
 import com.mealgo.restaurantservice.domain.shared.BusinessException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.mealgo.restaurantservice.application.event.EventType.MENU_ITEM_CREATED;
@@ -40,15 +44,15 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
     @Override
     @Transactional
     public MenuItemId createMenuItem(CreateMenuItemCommand command) {
-        var restaurantName = restaurantRepository.findNameByIdAndOwnerId(command.restaurantId(), command.ownerId())
+        String restaurantName = restaurantRepository.findNameByIdAndOwnerId(command.restaurantId(), command.ownerId())
                 .orElseThrow(() -> new BusinessException(RESTAURANT_NOT_FOUND, command.restaurantId()));
         if (!menuCategoryRepository.existsByIdAndRestaurantId(command.categoryId(), command.restaurantId())) {
             throw new BusinessException(MENU_CATEGORY_NOT_FOUND, command.categoryId());
         }
 
-        var groups = createOptionGroups(command);
+        List<MenuItemOptionGroup> groups = createOptionGroups(command);
         int displayOrder = menuItemRepository.getMaxDisplayOrder(command.categoryId()) + 1;
-        var menuItem = MenuItem.create(MenuCategoryId.of(command.categoryId()), command.name(),
+        MenuItem menuItem = MenuItem.create(MenuCategoryId.of(command.categoryId()), command.name(),
                 command.description(), command.basePrice(), command.imageUrl(), displayOrder, groups);
         menuItemRepository.save(menuItem);
 
@@ -69,15 +73,15 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
     }
 
     private List<MenuItemOptionGroup> createOptionGroups(CreateMenuItemCommand command) {
-        var groups = new ArrayList<MenuItemOptionGroup>();
-        var groupIds = new HashSet<UUID>();
-        for (var requested : command.optionGroups()) {
+        List<MenuItemOptionGroup> groups = new ArrayList<>();
+        Set<UUID> groupIds = new HashSet<>();
+        for (CreateMenuItemCommand.OptionGroupCommand requested : command.optionGroups()) {
             UUID groupId = requested.optionGroupId();
             if (!groupIds.add(groupId)) {
                 throw new BusinessException(OPTION_GROUP_DUPLICATE, groupId);
             }
 
-            var group = optionGroupRepository.findByIdAndRestaurantId(groupId, command.restaurantId())
+            OptionGroup group = optionGroupRepository.findByIdAndRestaurantId(groupId, command.restaurantId())
                     .orElseThrow(() -> new BusinessException(OPTION_GROUP_NOT_FOUND, groupId));
 
             if (requested.minSelect() == null || requested.maxSelect() == null
@@ -90,7 +94,7 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
                         requested.minSelect(), requested.maxSelect());
             }
 
-            var activeOptions = group.getOptions().stream()
+            List<Option> activeOptions = group.getOptions().stream()
                     .filter(option -> option.getStatus() == OptionStatus.ACTIVE).toList();
 
             if (group.getStatus() != OptionGroupStatus.ACTIVE || activeOptions.isEmpty()
@@ -98,13 +102,13 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
                 throw new BusinessException(OPTION_GROUP_CONFIGURATION_INVALID, groupId);
             }
 
-            var optionIds = new HashSet<UUID>();
+            Set<UUID> optionIds = new HashSet<>();
 
             group.getOptions().forEach(option -> optionIds.add(option.getId()));
 
-            var prices = new HashMap<UUID, BigDecimal>();
+            Map<UUID, BigDecimal> prices = new HashMap<>();
 
-            for (var price : requested.optionPrices()) {
+            for (CreateMenuItemCommand.OptionPriceCommand price : requested.optionPrices()) {
                 if (!optionIds.contains(price.optionId())) {
                     throw new BusinessException(OPTION_NOT_FOUND, price.optionId());
                 }
@@ -114,7 +118,7 @@ public class CreateMenuItemUseCaseImpl implements CreateMenuItemUseCase {
             }
 
             // Every option gets an item-specific price; omitted prices default to zero.
-            var optionPrices = group.getOptions().stream()
+            List<MenuItemOptionPrice> optionPrices = group.getOptions().stream()
                     .map(option -> new MenuItemOptionPrice(UUID.randomUUID(), option.getId(),
                             prices.getOrDefault(option.getId(), BigDecimal.ZERO)))
                     .toList();

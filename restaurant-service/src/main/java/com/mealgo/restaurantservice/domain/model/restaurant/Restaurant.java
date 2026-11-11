@@ -26,6 +26,7 @@ public final class Restaurant extends Entity<RestaurantId> implements IAggregate
     private Instant reviewedAt;
     private String rejectionReason;
     private String pauseReason;
+    private String avatarUrl;
 
     public Restaurant(RestaurantId id, UUID ownerId, String name, String phone,
                       RestaurantStatus status, Address address, Double latitude, Double longitude) {
@@ -75,6 +76,37 @@ public final class Restaurant extends Entity<RestaurantId> implements IAggregate
         if (decision == ApprovalStatus.REJECTED) {
             rejectionReason = trimmed;
         }
+    }
+
+    public Restaurant(RestaurantId id, UUID ownerId, String name, String phone,
+                      RestaurantStatus status, Address address, Double latitude, Double longitude,
+                      ApprovalStatus approvalStatus, Instant submittedAt, UUID reviewedBy,
+                      Instant reviewedAt, String rejectionReason, String pauseReason, String avatarUrl) {
+        this(id, ownerId, name, phone, status, address, latitude, longitude,
+                approvalStatus, submittedAt, reviewedBy, reviewedAt, rejectionReason, pauseReason);
+        this.avatarUrl = avatarUrl;
+    }
+
+    public boolean updateAvatar(String avatarUrl) {
+        requireApproved();
+        if (avatarUrl == null || avatarUrl.isBlank() || avatarUrl.length() > 2048) {
+            throw new BusinessException(RESTAURANT_AVATAR_INVALID);
+        }
+        String normalized = avatarUrl.trim();
+        try {
+            java.net.URI uri = new java.net.URI(normalized);
+            if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    || uri.getHost() == null || uri.getUserInfo() != null) {
+                throw new BusinessException(RESTAURANT_AVATAR_INVALID);
+            }
+        } catch (java.net.URISyntaxException exception) {
+            throw new BusinessException(RESTAURANT_AVATAR_INVALID);
+        }
+        if (normalized.equals(this.avatarUrl)) {
+            return false;
+        }
+        this.avatarUrl = normalized;
+        return true;
     }
 
     public void resubmit(String name, String phone, Address address, Double latitude, Double longitude, Instant now) {

@@ -9,13 +9,14 @@ import com.mealgo.restaurantservice.infrastructure.persistence.entity.OptionJpaE
 import com.mealgo.restaurantservice.infrastructure.persistence.entity.RestaurantJpaEntity;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public final class OptionGroupPersistenceMapper {
     private OptionGroupPersistenceMapper() {
     }
 
     public static OptionGroup toDomain(OptionGroupJpaEntity entity) {
-        var options = entity.getOptions().stream()
+        List<Option> options = entity.getOptions().stream()
                 .map(option -> new Option(option.getId(), option.getName(), option.getStatus(), option.getDisplayOrder()))
                 .toList();
         return new OptionGroup(OptionGroupId.of(entity.getId()), RestaurantId.of(entity.getRestaurant().getId()),
@@ -26,15 +27,15 @@ public final class OptionGroupPersistenceMapper {
             OptionGroup optionGroup,
             RestaurantJpaEntity restaurantReference
     ) {
-        var entity = new OptionGroupJpaEntity();
+        OptionGroupJpaEntity entity = new OptionGroupJpaEntity();
         entity.setId(optionGroup.getId().value());
         entity.setRestaurant(restaurantReference);
         entity.setName(optionGroup.getName());
         entity.setStatus(optionGroup.getStatus());
 
-        var options = new ArrayList<OptionJpaEntity>();
-        for (var option : optionGroup.getOptions()) {
-            var optionEntity = new OptionJpaEntity();
+        List<OptionJpaEntity> options = new ArrayList<>();
+        for (Option option : optionGroup.getOptions()) {
+            OptionJpaEntity optionEntity = new OptionJpaEntity();
             optionEntity.setId(option.getId());
             optionEntity.setName(option.getName());
             optionEntity.setStatus(option.getStatus());

@@ -29,7 +29,10 @@ class MyRestaurantControllerTest {
         var controller = new RestaurantController(mock(RegisterRestaurantUseCase.class), useCase,
                 mock(UpdateRestaurantStatusUseCase.class),
                 mock(com.mealgo.restaurantservice.application.port.in.restaurant.UpdateRestaurantAddressUseCase.class),
-                mock(com.mealgo.restaurantservice.api.rest.mapper.RestaurantAddressApiMapper.class));
+                mock(com.mealgo.restaurantservice.api.rest.mapper.RestaurantAddressApiMapper.class),
+                mock(com.mealgo.restaurantservice.application.port.in.restaurant.UpdateAvatarUseCase.class),
+                mock(com.mealgo.restaurantservice.api.rest.mapper.RestaurantAvatarApiMapper.class),
+                mock(com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlUseCase.class));
         var mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler(new StaticMessageSource()))

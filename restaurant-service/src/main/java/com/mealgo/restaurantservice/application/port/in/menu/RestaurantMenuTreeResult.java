@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record RestaurantMenuTreeResult(RestaurantSummary restaurant, List<CategoryNode> categories) {
     public record RestaurantSummary(UUID restaurantId, String name, String addressLine,
-                                    Double latitude, Double longitude,
+                                    Double latitude, Double longitude, String avatarUrl,
                                     boolean acceptingOrders, String unavailableReason) {}
 
     public record CategoryNode(UUID categoryId, String name, Integer displayOrder, List<MenuItemNode> items) {}

@@ -19,7 +19,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RestaurantController.class)
-@Import({SecurityConfig.class, HeaderRequestFilter.class, RestaurantAddressApiMapperImpl.class})
+@Import({SecurityConfig.class, HeaderRequestFilter.class, RestaurantAddressApiMapperImpl.class,
+        com.mealgo.restaurantservice.api.rest.mapper.RestaurantAvatarApiMapperImpl.class})
 class RestaurantAddressApiTest {
     @Autowired
     private MockMvc mvc;
@@ -35,6 +36,48 @@ class RestaurantAddressApiTest {
 
     @MockitoBean
     private UpdateRestaurantAddressUseCase updateAddressUseCase;
+
+    @MockitoBean
+    private UpdateAvatarUseCase updateAvatarUseCase;
+
+    @MockitoBean
+    private com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlUseCase generateUploadUrlUseCase;
+
+    @Test
+    void updatesAvatarWithAuthenticatedOwner() throws Exception {
+        when(updateAvatarUseCase.updateAvatar(any())).thenReturn(
+                new RestaurantAvatarResult(restaurantId, "https://cdn.example.com/avatar.jpg"));
+        mvc.perform(patch("/restaurants/{id}/avatar", restaurantId)
+                        .header(Constants.HEADER_ACCOUNT_ID, ownerId)
+                        .header(Constants.HEADER_USER_ROLES, "RESTAURANT")
+                        .contentType("application/json")
+                        .content("{\"avatarUrl\":\"https://cdn.example.com/avatar.jpg\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("avatarUrl").value("https://cdn.example.com/avatar.jpg"));
+        verify(updateAvatarUseCase).updateAvatar(new UpdateAvatarCommand(
+                restaurantId, ownerId, "https://cdn.example.com/avatar.jpg"));
+    }
+
+    @Test
+    void customerCannotChangeAvatar() throws Exception {
+        mvc.perform(patch("/restaurants/{id}/avatar", restaurantId)
+                        .header(Constants.HEADER_ACCOUNT_ID, ownerId)
+                        .header(Constants.HEADER_USER_ROLES, "CUSTOMER")
+                        .contentType("application/json")
+                        .content("{\"avatarUrl\":\"https://cdn.example.com/avatar.jpg\"}"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(updateAvatarUseCase);
+    }
+
+    @Test
+    void rejectsMissingAvatar() throws Exception {
+        mvc.perform(patch("/restaurants/{id}/avatar", restaurantId)
+                        .header(Constants.HEADER_ACCOUNT_ID, ownerId)
+                        .header(Constants.HEADER_USER_ROLES, "RESTAURANT")
+                        .contentType("application/json").content("{}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(updateAvatarUseCase);
+    }
 
     private final UUID restaurantId = UUID.randomUUID();
     private final UUID ownerId = UUID.randomUUID();

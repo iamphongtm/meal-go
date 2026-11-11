@@ -1,5 +1,16 @@
 package com.mealgo.restaurantservice.api.rest.controller;
 
+import com.mealgo.restaurantservice.api.rest.dto.request.UpdateAvatarRequest;
+import com.mealgo.restaurantservice.api.rest.dto.response.RestaurantAvatarResponse;
+import com.mealgo.restaurantservice.api.rest.mapper.RestaurantAvatarApiMapper;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateAvatarUseCase;
+import com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlUseCase;
+import com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlCommand;
+import com.mealgo.restaurantservice.application.port.in.upload.PresignedUploadResult;
+import com.mealgo.restaurantservice.application.port.in.restaurant.UpdateAvatarCommand;
+import com.mealgo.restaurantservice.api.rest.dto.request.GenerateUploadUrlRequest;
+import com.mealgo.restaurantservice.api.rest.dto.response.PresignedUploadResponse;
+
 import com.mealgo.restaurantservice.api.rest.dto.request.UpdateRestaurantAddressRequest;
 import com.mealgo.restaurantservice.api.rest.dto.response.RestaurantAddressResponse;
 import com.mealgo.restaurantservice.api.rest.mapper.RestaurantAddressApiMapper;
@@ -56,6 +67,37 @@ public class RestaurantController {
     UpdateRestaurantStatusUseCase updateRestaurantStatusUseCase;
     UpdateRestaurantAddressUseCase updateRestaurantAddressUseCase;
     RestaurantAddressApiMapper restaurantAddressApiMapper;
+
+    UpdateAvatarUseCase updateAvatarUseCase;
+    RestaurantAvatarApiMapper restaurantAvatarApiMapper;
+    GenerateUploadUrlUseCase generateUploadUrlUseCase;
+
+    @PostMapping("/{restaurantId}/uploads")
+    @PreAuthorize("hasRole('RESTAURANT')")
+    @Operation(summary = "Generate a presigned URL to upload a restaurant image")
+    public ResponseEntity<PresignedUploadResponse> generateUploadUrl(
+            @PathVariable UUID restaurantId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody GenerateUploadUrlRequest request
+    ) {
+        PresignedUploadResult result = generateUploadUrlUseCase.generateUploadUrl(
+                new GenerateUploadUrlCommand(
+                        restaurantId, user.userId(), request.fileName(), request.contentType(), request.fileSize()));
+        return ResponseEntity.ok(new PresignedUploadResponse(
+                result.uploadUrl(), result.objectKey(), result.imageUrl(), result.expiresAt(), result.method(), result.requiredHeaders()));
+    }
+
+    @PatchMapping("/{restaurantId}/avatar")
+    @PreAuthorize("hasRole('RESTAURANT')")
+    @Operation(summary = "Update the avatar URL of an approved restaurant")
+    public ResponseEntity<RestaurantAvatarResponse> updateAvatar(
+            @PathVariable UUID restaurantId,
+            @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody UpdateAvatarRequest request
+    ) {
+        UpdateAvatarCommand command = restaurantAvatarApiMapper.toCommand(restaurantId, user.userId(), request);
+        return ResponseEntity.ok(restaurantAvatarApiMapper.toResponse(updateAvatarUseCase.updateAvatar(command)));
+    }
 
     @PatchMapping("/{restaurantId}/address")
     @PreAuthorize("hasRole('RESTAURANT')")

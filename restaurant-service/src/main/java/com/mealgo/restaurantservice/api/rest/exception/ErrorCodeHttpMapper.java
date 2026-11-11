@@ -9,7 +9,7 @@ final class ErrorCodeHttpMapper {
 
     static HttpStatus statusOf(ErrorCode code) {
         return switch (code) {
-            case RESTAURANT_ADDRESS_INVALID -> HttpStatus.BAD_REQUEST;
+            case RESTAURANT_ADDRESS_INVALID, RESTAURANT_AVATAR_INVALID -> HttpStatus.BAD_REQUEST;
             case RESTAURANT_ADDRESS_REQUIRES_CLOSED -> HttpStatus.CONFLICT;
             case RESTAURANT_NOT_APPROVED -> HttpStatus.FORBIDDEN;
             case RESTAURANT_REVIEW_CONFLICT -> HttpStatus.CONFLICT;

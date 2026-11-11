@@ -2,6 +2,8 @@ package com.mealgo.restaurantservice.infrastructure.persistence.adapter;
 
 import com.mealgo.restaurantservice.application.port.out.OptionGroupRepository;
 import com.mealgo.restaurantservice.domain.model.optiongroup.OptionGroup;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.RestaurantJpaEntity;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.OptionGroupJpaEntity;
 import com.mealgo.restaurantservice.infrastructure.persistence.mapper.OptionGroupPersistenceMapper;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.OptionGroupJpaRepository;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.RestaurantJpaRepository;
@@ -30,8 +32,8 @@ public class OptionGroupAdapter implements OptionGroupRepository {
 
     @Override
     public void save(OptionGroup optionGroup) {
-        var restaurantReference = restaurantJpaRepository.getReferenceById(optionGroup.getRestaurantId().value());
-        var entity = OptionGroupPersistenceMapper.toNewEntity(optionGroup, restaurantReference);
+        RestaurantJpaEntity restaurantReference = restaurantJpaRepository.getReferenceById(optionGroup.getRestaurantId().value());
+        OptionGroupJpaEntity entity = OptionGroupPersistenceMapper.toNewEntity(optionGroup, restaurantReference);
         optionGroupJpaRepository.save(entity);
     }
 }

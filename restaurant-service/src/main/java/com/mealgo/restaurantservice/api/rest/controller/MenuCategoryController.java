@@ -4,6 +4,7 @@ import com.mealgo.restaurantservice.api.rest.dto.request.CategoryCreationRequest
 import com.mealgo.restaurantservice.api.rest.dto.response.CategoryCreationResponse;
 import com.mealgo.restaurantservice.application.port.in.menucategory.ManageMenuCategoryUseCase;
 import com.mealgo.restaurantservice.application.port.in.menucategory.CreateMenuCategoryCommand;
+import com.mealgo.restaurantservice.domain.model.category.MenuCategoryId;
 import com.mealgo.restaurantservice.infrastructure.config.AuthenticatedUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -65,8 +66,8 @@ public class MenuCategoryController {
             @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody CategoryCreationRequest request) {
 
-        var command = CreateMenuCategoryCommand.builder().name(request.name()).restaurantId(restaurantId).ownerId(user.userId()).build();
-        var result = menuCategoryUseCase.create(command);
+        CreateMenuCategoryCommand command = CreateMenuCategoryCommand.builder().name(request.name()).restaurantId(restaurantId).ownerId(user.userId()).build();
+        MenuCategoryId result = menuCategoryUseCase.create(command);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new CategoryCreationResponse(result.value()));

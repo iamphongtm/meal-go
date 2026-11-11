@@ -41,6 +41,9 @@ public class RestaurantJpaEntity extends BaseJpaEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "avatar_url", length = 2048)
+    private String avatarUrl;
+
     @Column(nullable = false, length = 30)
     private String phone;
 

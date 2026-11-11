@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 public class S3Config {
     @Bean(destroyMethod = "close")
     public S3Presigner s3Presigner(AWSProperties properties) {
-        var builder = S3Presigner.builder()
+        S3Presigner.Builder builder = S3Presigner.builder()
                 .region(Region.of(properties.getS3().getRegion()));
 
         if (StringUtils.hasText(properties.getAccessKey()) && StringUtils.hasText(properties.getSecretKey())) {

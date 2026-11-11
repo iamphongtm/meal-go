@@ -1,0 +1,349 @@
+{
+  "info": {
+    "_postman_id": "c83be1b5-5a14-4e5e-b7b5-19cbf6e8a701",
+    "name": "MealGo - Restaurant Validate Menu",
+    "description": "Test data matches Flyway V7__seed_menu_validation_test_data.sql. Flow A is the valid happy path; Flow E contains invalid menu scenarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "restaurantBaseUrl",
+      "value": "http://localhost:8030",
+      "type": "string"
+    },
+    {
+      "key": "restaurantId",
+      "value": "10000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "accountId",
+      "value": "90000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "activeItemId",
+      "value": "30000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "soldOutItemId",
+      "value": "30000000-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "activeOptionId",
+      "value": "50000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "soldOutOptionId",
+      "value": "50000000-0000-0000-0000-000000000002",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "A - Happy path",
+      "item": [
+        {
+          "name": "A1 - Validate active item and option",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Menu is valid', () => pm.expect(body.valid).to.eql(true));",
+                  "pm.test('Currency is VND', () => pm.expect(body.currency).to.eql('VND'));",
+                  "pm.test('Unit price is authoritative', () => pm.expect(Number(body.items[0].unitPrice)).to.eql(80000));",
+                  "pm.test('No validation issue', () => pm.expect(body.issues).to.be.an('array').that.is.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Account-Id",
+                "value": "{{accountId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "SERVICE",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"lineId\": \"aaaaaaaa-0000-0000-0000-000000000001\",\n      \"menuItemId\": \"{{activeItemId}}\",\n      \"quantity\": 2,\n      \"selectedOptionIds\": [\"{{activeOptionId}}\"]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{restaurantBaseUrl}}/internal/restaurants/{{restaurantId}}/menu/validate",
+              "host": [
+                "{{restaurantBaseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu",
+                "validate"
+              ]
+            },
+            "description": "Expected: valid=true, basePrice=65000, additionalPrice=15000, unitPrice=80000."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "E - Invalid paths",
+      "item": [
+        {
+          "name": "E1 - Sold-out menu item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Menu is invalid', () => pm.expect(body.valid).to.eql(false));",
+                  "pm.test('Returns MENU_ITEM_UNAVAILABLE', () => pm.expect(body.issues.map(i => i.code)).to.include('MENU_ITEM_UNAVAILABLE'));",
+                  "pm.test('Does not return partial prices', () => pm.expect(body.items).to.be.an('array').that.is.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Account-Id",
+                "value": "{{accountId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "SERVICE"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"lineId\": \"aaaaaaaa-0000-0000-0000-000000000002\",\n      \"menuItemId\": \"{{soldOutItemId}}\",\n      \"quantity\": 1,\n      \"selectedOptionIds\": []\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{restaurantBaseUrl}}/internal/restaurants/{{restaurantId}}/menu/validate",
+              "host": [
+                "{{restaurantBaseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E2 - Sold-out option",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Menu is invalid', () => pm.expect(body.valid).to.eql(false));",
+                  "pm.test('Returns OPTION_UNAVAILABLE', () => pm.expect(body.issues.map(i => i.code)).to.include('OPTION_UNAVAILABLE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Account-Id",
+                "value": "{{accountId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "SERVICE"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"lineId\": \"aaaaaaaa-0000-0000-0000-000000000003\",\n      \"menuItemId\": \"{{activeItemId}}\",\n      \"quantity\": 1,\n      \"selectedOptionIds\": [\"{{soldOutOptionId}}\"]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{restaurantBaseUrl}}/internal/restaurants/{{restaurantId}}/menu/validate",
+              "host": [
+                "{{restaurantBaseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E3 - Missing required option",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Menu is invalid', () => pm.expect(body.valid).to.eql(false));",
+                  "pm.test('Returns OPTION_SELECTION_OUT_OF_RANGE', () => pm.expect(body.issues.map(i => i.code)).to.include('OPTION_SELECTION_OUT_OF_RANGE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Account-Id",
+                "value": "{{accountId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "SERVICE"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"lineId\": \"aaaaaaaa-0000-0000-0000-000000000004\",\n      \"menuItemId\": \"{{activeItemId}}\",\n      \"quantity\": 1,\n      \"selectedOptionIds\": []\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{restaurantBaseUrl}}/internal/restaurants/{{restaurantId}}/menu/validate",
+              "host": [
+                "{{restaurantBaseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E4 - Option not configured for item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Menu is invalid', () => pm.expect(body.valid).to.eql(false));",
+                  "pm.test('Returns OPTION_NOT_CONFIGURED', () => pm.expect(body.issues.map(i => i.code)).to.include('OPTION_NOT_CONFIGURED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Account-Id",
+                "value": "{{accountId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "SERVICE"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"lineId\": \"aaaaaaaa-0000-0000-0000-000000000005\",\n      \"menuItemId\": \"{{activeItemId}}\",\n      \"quantity\": 1,\n      \"selectedOptionIds\": [\"99999999-9999-9999-9999-999999999999\"]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{restaurantBaseUrl}}/internal/restaurants/{{restaurantId}}/menu/validate",
+              "host": [
+                "{{restaurantBaseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

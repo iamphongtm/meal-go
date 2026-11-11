@@ -30,6 +30,10 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
         return restaurants.findById(restaurantId)
                 .filter(restaurant -> restaurant.getApprovalStatus() == ApprovalStatus.APPROVED).map(restaurant -> {
             boolean open = restaurant.getStatus() == RestaurantStatus.OPENING;
+            String unavailableReason = null;
+            if (!open) {
+                unavailableReason = "RESTAURANT_CLOSED";
+            }
             List<MenuCategoryJpaEntity> menu = categories.findCustomerMenu(restaurantId);
             List<MenuItemOptionGroupJpaEntity> links = List.of();
             if (!menu.isEmpty()) {
@@ -49,8 +53,8 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
                     .toList();
             return new RestaurantMenuTreeResult(new RestaurantMenuTreeResult.RestaurantSummary(
                     restaurant.getId(), restaurant.getName(), restaurant.getAddress().getAddressLine(),
-                    restaurant.getLatitude(), restaurant.getLongitude(),
-                    open, open ? null : "RESTAURANT_CLOSED"), nodes);
+                    restaurant.getLatitude(), restaurant.getLongitude(), restaurant.getAvatarUrl(),
+                    open, unavailableReason), nodes);
         });
     }
 
@@ -84,10 +88,14 @@ public class RestaurantMenuQueryAdapter implements RestaurantMenuQueryPort {
         return restaurants.findById(restaurantId)
                 .filter(restaurant -> restaurant.getApprovalStatus() == ApprovalStatus.APPROVED).map(restaurant -> {
             boolean open = restaurant.getStatus() == RestaurantStatus.OPENING;
+            String unavailableReason = null;
+            if (!open) {
+                unavailableReason = "RESTAURANT_CLOSED";
+            }
             RestaurantMenuResult.RestaurantSummary summary = new RestaurantMenuResult.RestaurantSummary(
                     restaurant.getId(), restaurant.getName(), restaurant.getAddress().getAddressLine(),
-                    restaurant.getLatitude(), restaurant.getLongitude(),
-                    open, open ? null : "RESTAURANT_CLOSED");
+                    restaurant.getLatitude(), restaurant.getLongitude(), restaurant.getAvatarUrl(),
+                    open, unavailableReason);
             Set<UUID> itemsWithOptions = new HashSet<>(items.findItemIdsWithActiveOptions(restaurantId));
             List<RestaurantMenuResult.Category> menu = categories.findCustomerMenu(restaurantId).stream()
                     .map(category -> new RestaurantMenuResult.Category(

@@ -35,7 +35,7 @@ public class GenerateUploadUrlUseCaseImpl implements GenerateUploadUrlUseCase {
             throw new BusinessException(RESTAURANT_NOT_FOUND, command.restaurantId());
         }
 
-        String objectKey = "restaurants/%s/menu-items/%s%s".formatted(
+        String objectKey = "restaurants/%s/images/%s%s".formatted(
                 command.restaurantId(), UUID.randomUUID(), IMAGE_EXTENSIONS.get(command.contentType()));
 
         return imageStorage.generateUploadUrl(objectKey, command.contentType());

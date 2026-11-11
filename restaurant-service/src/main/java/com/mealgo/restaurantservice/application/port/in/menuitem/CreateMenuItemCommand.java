@@ -15,7 +15,11 @@ public record CreateMenuItemCommand(
         List<OptionGroupCommand> optionGroups
 ) {
     public CreateMenuItemCommand {
-        optionGroups = optionGroups == null ? List.of() : List.copyOf(optionGroups);
+        if (optionGroups == null) {
+            optionGroups = List.of();
+        } else {
+            optionGroups = List.copyOf(optionGroups);
+        }
     }
 
     public record OptionGroupCommand(
@@ -25,7 +29,11 @@ public record CreateMenuItemCommand(
             List<OptionPriceCommand> optionPrices
     ) {
         public OptionGroupCommand {
-            optionPrices = optionPrices == null ? List.of() : List.copyOf(optionPrices);
+            if (optionPrices == null) {
+                optionPrices = List.of();
+            } else {
+                optionPrices = List.copyOf(optionPrices);
+            }
         }
     }
 

@@ -3,6 +3,8 @@ package com.mealgo.restaurantservice.api.rest.controller;
 import com.mealgo.restaurantservice.api.rest.dto.request.OptionGroupCreationRequest;
 import com.mealgo.restaurantservice.api.rest.dto.request.OptionGroupItemsRequest;
 import com.mealgo.restaurantservice.application.port.in.optiongroup.OptionGroupItems;
+import com.mealgo.restaurantservice.domain.model.optiongroup.OptionGroupId;
+import java.util.List;
 import com.mealgo.restaurantservice.application.usecase.ManageOptionGroupItemsUseCase;
 import com.mealgo.restaurantservice.application.port.in.optiongroup.ManageOptionGroupUseCase;
 import com.mealgo.restaurantservice.application.port.in.optiongroup.OptionGroupCreationCommand;
@@ -43,7 +45,7 @@ public class OptionGroupController {
             @PathVariable UUID restaurantId, @PathVariable UUID optionGroupId,
             @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody OptionGroupItemsRequest request) {
-        var items = request.items().stream().map(item -> new OptionGroupItems.ItemConfiguration(
+        List<OptionGroupItems.ItemConfiguration> items = request.items().stream().map(item -> new OptionGroupItems.ItemConfiguration(
                 item.menuItemId(), item.minSelect(), item.maxSelect(), item.optionPrices().stream()
                 .map(price -> new OptionGroupItems.OptionPrice(price.optionId(), price.additionalPrice()))
                 .toList())).toList();
@@ -71,7 +73,7 @@ public class OptionGroupController {
                                         .build())
                         .toList())
                 .build();
-        var result = optionGroupUseCase.createOptionGroup(command);
+        OptionGroupId result = optionGroupUseCase.createOptionGroup(command);
 
         return new ResponseEntity<>(result, HttpStatus.CREATED);
     }

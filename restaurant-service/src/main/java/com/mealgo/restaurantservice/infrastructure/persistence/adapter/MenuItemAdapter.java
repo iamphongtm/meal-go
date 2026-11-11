@@ -2,6 +2,8 @@ package com.mealgo.restaurantservice.infrastructure.persistence.adapter;
 
 import com.mealgo.restaurantservice.application.port.out.MenuItemRepository;
 import com.mealgo.restaurantservice.domain.model.menuitem.MenuItem;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.MenuCategoryJpaEntity;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.MenuItemJpaEntity;
 import com.mealgo.restaurantservice.infrastructure.persistence.mapper.MenuItemPersistenceMapper;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.MenuCategoryJpaRepository;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.MenuItemJpaRepository;
@@ -23,7 +25,7 @@ public class MenuItemAdapter implements MenuItemRepository {
 
     @Override
     public void save(MenuItem menuItem) {
-        var categoryReference = menuCategoryJpaRepository.getReferenceById(menuItem.getCategoryId().value());
+        MenuCategoryJpaEntity categoryReference = menuCategoryJpaRepository.getReferenceById(menuItem.getCategoryId().value());
         menuItemJpaRepository.save(MenuItemPersistenceMapper.toNewEntity(menuItem, categoryReference));
     }
 
@@ -35,7 +37,7 @@ public class MenuItemAdapter implements MenuItemRepository {
 
     @Override
     public void updateDetails(MenuItem item) {
-        var entity = menuItemJpaRepository.getReferenceById(item.getId().value());
+        MenuItemJpaEntity entity = menuItemJpaRepository.getReferenceById(item.getId().value());
         entity.setCategory(menuCategoryJpaRepository.getReferenceById(item.getCategoryId().value()));
         entity.setName(item.getName());
         entity.setDescription(item.getDescription());

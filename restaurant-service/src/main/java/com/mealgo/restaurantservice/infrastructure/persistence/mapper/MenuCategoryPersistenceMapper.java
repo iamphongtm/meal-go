@@ -12,7 +12,7 @@ public final class MenuCategoryPersistenceMapper {
             MenuCategory menuCategory,
             RestaurantJpaEntity restaurantReference
     ) {
-        var entity = new MenuCategoryJpaEntity();
+        MenuCategoryJpaEntity entity = new MenuCategoryJpaEntity();
         entity.setId(menuCategory.getId().value());
         entity.setName(menuCategory.getName());
         entity.setDisplayOrder(menuCategory.getDisplayOrder());

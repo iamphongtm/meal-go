@@ -2,6 +2,8 @@ package com.mealgo.restaurantservice.infrastructure.persistence.adapter;
 
 import com.mealgo.restaurantservice.application.port.out.MenuCategoryRepository;
 import com.mealgo.restaurantservice.domain.model.category.MenuCategory;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.MenuCategoryJpaEntity;
+import com.mealgo.restaurantservice.infrastructure.persistence.entity.RestaurantJpaEntity;
 import com.mealgo.restaurantservice.infrastructure.persistence.mapper.MenuCategoryPersistenceMapper;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.MenuCategoryJpaRepository;
 import com.mealgo.restaurantservice.infrastructure.persistence.repository.RestaurantJpaRepository;
@@ -24,8 +26,8 @@ public class MenuCategoryAdapter implements MenuCategoryRepository {
 
     @Override
     public void save(MenuCategory menuCategory) {
-        var restaurantReference = restaurantJpaRepository.getReferenceById(menuCategory.getRestaurantId().value());
-        var entity = MenuCategoryPersistenceMapper.toNewEntity(menuCategory, restaurantReference);
+        RestaurantJpaEntity restaurantReference = restaurantJpaRepository.getReferenceById(menuCategory.getRestaurantId().value());
+        MenuCategoryJpaEntity entity = MenuCategoryPersistenceMapper.toNewEntity(menuCategory, restaurantReference);
         menuCategoryJpaRepository.save(entity);
     }
 

@@ -2,6 +2,7 @@ package com.mealgo.restaurantservice.domain.shared;
 
 public enum ErrorCode {
     RESTAURANT_ADDRESS_INVALID("restaurant.address-invalid"),
+    RESTAURANT_AVATAR_INVALID("restaurant.avatar-invalid"),
     RESTAURANT_ADDRESS_REQUIRES_CLOSED("restaurant.address-requires-closed"),
     RESTAURANT_NOT_APPROVED("restaurant.not-approved"),
     RESTAURANT_REVIEW_CONFLICT("restaurant.review-conflict"),

@@ -20,6 +20,7 @@ public class MyRestaurantQueryAdapter implements MyRestaurantQueryPort {
     public Optional<MyRestaurantResult> findByOwnerId(UUID ownerId) {
         return restaurantJpaRepository.findByOwnerId(ownerId)
                 .map(restaurant -> new MyRestaurantResult(
-                        restaurant.getId(), restaurant.getName(), restaurant.getStatus(), restaurant.getPauseReason()));
+                        restaurant.getId(), restaurant.getName(), restaurant.getStatus(), restaurant.getPauseReason(),
+                        restaurant.getAvatarUrl()));
     }
 }

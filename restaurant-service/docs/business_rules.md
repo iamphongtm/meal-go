@@ -39,7 +39,18 @@ Chi tiết API, sự kiện và giới hạn tích hợp: [partner-applications.
 | BR-RESTAURANT-ADDRESS-03 | Tải aggregate có khóa; cập nhật và outbox RestaurantAddressUpdated cùng transaction. Không đổi dữ liệu thì trả 200 không phát event. Snapshot mang name/status/addressLine/wardCode/latitude/longitude; Search xử lý bất đồng bộ, xem docs/business_rules.md của search-service. | Đã có code; cần hạ tầng outbox/CDC/Kafka đang hoạt động để đồng bộ thực tế |
 | BR-RESTAURANT-ADDRESS-04 | Merchant đọc hồ sơ/menu từ API thật; chỉ bật sửa địa chỉ khi quán CLOSED và APPROVED. Form dùng tìm kiếm Place VietMap, ánh xạ tên hành chính khi khớp duy nhất, cho chọn danh mục thủ công và yêu cầu xác nhận địa chỉ. PATCH đủ năm trường; giữ dữ liệu khi lỗi, cập nhật trang bằng response khi thành công. Không hiển thị số liệu đánh giá/lịch hoạt động/bản đồ giả. | Đã có code: RestaurantPage, RestaurantAddressDialog, partnerApi; browser kiểm thử bằng fixture |
 
+## Ảnh đại diện nhà hàng
+
+| ID | Quy tắc | Trạng thái / nơi thực thi |
+|---|---|---|
+| BR-RESTAURANT-AVATAR-01 | PATCH `/restaurants/{restaurantId}/avatar` nhận avatarUrl; chỉ role RESTAURANT là chủ quán APPROVED được cập nhật, không yêu cầu CLOSED. Sai chủ/không tồn tại trả 404; chưa duyệt trả 403. | Đã có code: UpdateAvatarUseCaseImpl, Restaurant.updateAvatar |
+| BR-RESTAURANT-AVATAR-02 | URL bắt buộc, tối đa 2048 ký tự trước trim, HTTP/HTTPS có host và không chứa credentials. Không tải hoặc xác minh nội dung ảnh; client upload trước rồi gửi URL. Không hỗ trợ xóa bằng null/rỗng, không thêm ảnh bìa, không xóa object cũ. | Đã có code: domain validation, request DTO |
+| BR-RESTAURANT-AVATAR-03 | Lưu restaurants.avatar_url nullable; bản ghi cũ giữ null. Khóa aggregate và cập nhật qua domain trong transaction; URL không đổi trả 200 không ghi lại. Giữ trạng thái duyệt/vận hành. GET /restaurants/me và menu/menu/tree trả avatarUrl; chưa đồng bộ avatar sang Search. | Đã có code và migration V9; chưa chạy DB thực tế |
+| BR-RESTAURANT-AVATAR-04 | POST /restaurants/{id}/uploads dùng GenerateUploadUrlUseCase chung, kiểm tra role RESTAURANT và sở hữu, trả presigned URL cho upload S3. Key mới restaurants/{id}/images; endpoint menu-items/uploads giữ tương thích. Client upload xong mới PATCH avatar. | Đã có code backend; frontend Merchant không thuộc repo cá nhân |
+
 ## Lịch sử cập nhật
+
+- 2026-11-11: Import backend từ repo nhóm commit f415e9151a0cce814ddc42f37fed86606007acb4: avatar, upload dùng chung, menu validation và refactor bỏ var/toán tử ba ngôi. Giữ cấu trúc Maven, cấu hình môi trường, test và tài liệu riêng của repo cá nhân. Không import frontend/Auth.
 
 - 2026-11-11: Import backend Restaurant từ snapshot repo nhóm. Các mục Merchant/Admin phía trên là tài liệu tham chiếu, không có frontend hoặc Auth trong đợt đồng bộ này. Search chưa nhận event riêng khi quán đổi trạng thái mở/đóng; cần xử lý trước khi coi trạng thái index là thời gian thực.
 

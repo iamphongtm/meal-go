@@ -1,6 +1,7 @@
 package com.mealgo.restaurantservice.infrastructure.persistence.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.mealgo.restaurantservice.domain.enums.ApprovalStatus;
 import com.mealgo.restaurantservice.domain.enums.RestaurantStatus;
 import com.mealgo.restaurantservice.infrastructure.persistence.entity.AddressEmbeddable;
@@ -24,7 +25,7 @@ class RestaurantMenuLocationTest {
         restaurant.setLatitude(20.912345);
         restaurant.setLongitude(106.123456);
 
-        var json = new ObjectMapper().valueToTree(menu(restaurant, tree)).get("restaurant");
+        JsonNode json = new ObjectMapper().valueToTree(menu(restaurant, tree)).get("restaurant");
 
         assertThat(json.get("latitude").doubleValue()).isEqualTo(20.912345);
         assertThat(json.get("longitude").doubleValue()).isEqualTo(106.123456);
@@ -35,7 +36,7 @@ class RestaurantMenuLocationTest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void missingCoordinatesRemainNull(boolean tree) {
-        var json = new ObjectMapper().valueToTree(menu(restaurant(), tree)).get("restaurant");
+        JsonNode json = new ObjectMapper().valueToTree(menu(restaurant(), tree)).get("restaurant");
 
         assertThat(json.get("latitude").isNull()).isTrue();
         assertThat(json.get("longitude").isNull()).isTrue();
@@ -66,7 +67,9 @@ class RestaurantMenuLocationTest {
         RestaurantMenuQueryAdapter adapter = new RestaurantMenuQueryAdapter(restaurants,
                 mock(MenuCategoryJpaRepository.class), mock(MenuItemJpaRepository.class),
                 mock(OptionGroupJpaRepository.class), mock(MenuItemOptionGroupJpaRepository.class));
-        return tree ? adapter.findMenuTree(restaurant.getId()).orElse(null)
-                : adapter.findMenu(restaurant.getId()).orElse(null);
+        if (tree) {
+            return adapter.findMenuTree(restaurant.getId()).orElse(null);
+        }
+        return adapter.findMenu(restaurant.getId()).orElse(null);
     }
 }

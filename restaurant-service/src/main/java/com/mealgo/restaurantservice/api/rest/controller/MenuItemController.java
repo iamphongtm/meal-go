@@ -13,6 +13,8 @@ import com.mealgo.restaurantservice.api.rest.dto.request.UpdateMenuItemStatusReq
 import com.mealgo.restaurantservice.api.rest.dto.response.PresignedUploadResponse;
 import com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlCommand;
 import com.mealgo.restaurantservice.application.port.in.upload.GenerateUploadUrlUseCase;
+import com.mealgo.restaurantservice.application.port.in.upload.PresignedUploadResult;
+import com.mealgo.restaurantservice.domain.model.menuitem.MenuItemId;
 import com.mealgo.restaurantservice.infrastructure.config.AuthenticatedUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,20 +72,26 @@ public class MenuItemController {
             @PathVariable UUID restaurantId,
             @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody MenuItemCreationRequest request) {
-        var groups = request.optionGroups() == null ? List.<CreateMenuItemCommand.OptionGroupCommand>of()
-                : request.optionGroups().stream().map(group -> new CreateMenuItemCommand.OptionGroupCommand(
-                        group.optionGroupId(), group.minSelect(), group.maxSelect(),
-                        group.optionPrices() == null ? List.of() : group.optionPrices().stream()
-                                .map(price -> new CreateMenuItemCommand.OptionPriceCommand(
-                                        price.optionId(), price.additionalPrice()))
-                                .toList()))
-                .toList();
+        List<CreateMenuItemCommand.OptionGroupCommand> groups = List.of();
+        if (request.optionGroups() != null) {
+            groups = request.optionGroups().stream().map(group -> {
+                List<CreateMenuItemCommand.OptionPriceCommand> prices = List.of();
+                if (group.optionPrices() != null) {
+                    prices = group.optionPrices().stream()
+                            .map(price -> new CreateMenuItemCommand.OptionPriceCommand(
+                                    price.optionId(), price.additionalPrice()))
+                            .toList();
+                }
+                return new CreateMenuItemCommand.OptionGroupCommand(
+                        group.optionGroupId(), group.minSelect(), group.maxSelect(), prices);
+            }).toList();
+        }
 
-        var command = new CreateMenuItemCommand(
+        CreateMenuItemCommand command = new CreateMenuItemCommand(
                 restaurantId, user.userId(), request.categoryId(), request.name(), request.description(),
                 request.basePrice(), request.imageUrl(), groups);
 
-        var menuItemId = createMenuItemUseCase.createMenuItem(command);
+        MenuItemId menuItemId = createMenuItemUseCase.createMenuItem(command);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new MenuItemCreationResponse(menuItemId.value()));
@@ -95,10 +103,10 @@ public class MenuItemController {
             @PathVariable UUID restaurantId,
             @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody GenerateUploadUrlRequest request) {
-        var command = new GenerateUploadUrlCommand(
+        GenerateUploadUrlCommand command = new GenerateUploadUrlCommand(
                 restaurantId, user.userId(), request.fileName(), request.contentType(), request.fileSize());
 
-        var result = generateUploadUrlUseCase.generateUploadUrl(command);
+        PresignedUploadResult result = generateUploadUrlUseCase.generateUploadUrl(command);
 
         return ResponseEntity.ok(new PresignedUploadResponse(
                 result.uploadUrl(), result.objectKey(), result.imageUrl(), result.expiresAt(), result.method(), result.requiredHeaders()));

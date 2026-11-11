@@ -11,6 +11,7 @@ import com.mealgo.restaurantservice.domain.shared.BusinessException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 import static com.mealgo.restaurantservice.domain.shared.ErrorCode.OPTION_GROUP_CONFLICT;
 import static com.mealgo.restaurantservice.domain.shared.ErrorCode.RESTAURANT_NOT_FOUND;
@@ -32,10 +33,10 @@ public class ManageOptionGroupUseCaseImpl implements ManageOptionGroupUseCase {
             throw new BusinessException(OPTION_GROUP_CONFLICT, command.name());
         }
 
-        var optionNames = command.options().stream()
+        List<String> optionNames = command.options().stream()
                 .map(OptionGroupCreationCommand.OptionCreationCommand::name)
                 .toList();
-        var optionGroup = OptionGroup.create(
+        OptionGroup optionGroup = OptionGroup.create(
                 RestaurantId.of(command.restaurantId()), command.name(), optionNames);
 
         optionGroupRepository.save(optionGroup);

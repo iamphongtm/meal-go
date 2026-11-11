@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,16 +22,16 @@ public class S3ImageStorageAdapter implements ImageStorage {
 
     @Override
     public PresignedUploadResult generateUploadUrl(String objectKey, String contentType) {
-        var putRequest = PutObjectRequest.builder()
+        PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(awsProperties.getS3().getBucket())
                 .key(objectKey)
                 .contentType(contentType)
                 .build();
-        var presignRequest = PutObjectPresignRequest.builder()
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                 .signatureDuration(awsProperties.getS3().getUploadUrlExpiration())
                 .putObjectRequest(putRequest)
                 .build();
-        var signedRequest = s3Presigner.presignPutObject(presignRequest);
+        PresignedPutObjectRequest signedRequest = s3Presigner.presignPutObject(presignRequest);
 
         Map<String, List<String>> requiredHeaders = new LinkedHashMap<>();
         signedRequest.signedHeaders().forEach((name, values) -> {

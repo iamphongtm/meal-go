@@ -29,21 +29,27 @@ public class UpdateMenuItemUseCaseImpl implements UpdateMenuItemUseCase {
     @Override
     @Transactional
     public void update(UpdateMenuItemCommand command) {
-        var item = ownedItem(command.restaurantId(), command.ownerId(), command.menuItemId());
+        MenuItem item = ownedItem(command.restaurantId(), command.ownerId(), command.menuItemId());
         if (!categories.existsByIdAndRestaurantId(command.categoryId(), command.restaurantId())) {
             throw new BusinessException(MENU_CATEGORY_NOT_FOUND, command.categoryId());
         }
-        int order = item.getCategoryId().value().equals(command.categoryId()) ? item.getDisplayOrder()
-                : items.getMaxDisplayOrder(command.categoryId()) + 1;
+        int order = item.getDisplayOrder();
+        if (!item.getCategoryId().value().equals(command.categoryId())) {
+            order = items.getMaxDisplayOrder(command.categoryId()) + 1;
+        }
+        String description = null;
+        if (command.description() != null) {
+            description = command.description().trim();
+        }
         items.updateDetails(item.revise(MenuCategoryId.of(command.categoryId()), command.name().trim(),
-                command.description() == null ? null : command.description().trim(), command.basePrice(),
+                description, command.basePrice(),
                 command.imageUrl(), order));
     }
 
     @Override
     @Transactional
     public void updateStatus(UpdateMenuItemStatusCommand command) {
-        var item = ownedItem(command.restaurantId(), command.ownerId(), command.menuItemId());
+        MenuItem item = ownedItem(command.restaurantId(), command.ownerId(), command.menuItemId());
         items.updateDetails(item.changeStatus(command.status()));
     }
 }
